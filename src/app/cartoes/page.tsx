@@ -158,9 +158,11 @@ function CardFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar cartão" : "Novo cartão"}</DialogTitle>
+          <DialogTitle className="text-lg">
+            {isEdit ? "Editar cartão" : "Novo cartão"}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Atualize os dados do cartão."
@@ -168,10 +170,15 @@ function CardFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" placeholder="Ex: Nubank Ultravioleta" {...register("nome")} />
+            <Input
+              id="nome"
+              placeholder="Ex: Nubank Ultravioleta"
+              className="h-9 rounded-full px-3.5"
+              {...register("nome")}
+            />
             {errors.nome && (
               <p className="text-xs text-destructive">{errors.nome.message}</p>
             )}
@@ -179,19 +186,26 @@ function CardFormDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="instituicao">Instituição</Label>
-            <Input id="instituicao" placeholder="Ex: Nu Pagamentos" {...register("instituicao")} />
+            <Input
+              id="instituicao"
+              placeholder="Ex: Nu Pagamentos"
+              className="h-9 rounded-full px-3.5"
+              {...register("instituicao")}
+            />
             {errors.instituicao && (
               <p className="text-xs text-destructive">{errors.instituicao.message}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="limite">Limite</Label>
               <Input
                 id="limite"
                 type="number"
                 step="0.01"
+                placeholder="Ex: 5000,00"
+                className="h-9 rounded-full px-3.5"
                 {...register("limite", { valueAsNumber: true })}
               />
               {errors.limite && (
@@ -205,7 +219,7 @@ function CardFormDialog({
                 name="escopo"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -221,7 +235,7 @@ function CardFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="diaFechamento">Dia de fechamento</Label>
               <Input
@@ -229,6 +243,8 @@ function CardFormDialog({
                 type="number"
                 min={1}
                 max={31}
+                placeholder="Ex: 28"
+                className="h-9 rounded-full px-3.5"
                 {...register("diaFechamento", { valueAsNumber: true })}
               />
               {errors.diaFechamento && (
@@ -242,6 +258,8 @@ function CardFormDialog({
                 type="number"
                 min={1}
                 max={31}
+                placeholder="Ex: 10"
+                className="h-9 rounded-full px-3.5"
                 {...register("diaVencimento", { valueAsNumber: true })}
               />
               {errors.diaVencimento && (
@@ -250,7 +268,7 @@ function CardFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Conta de débito (opcional)</Label>
               <Controller
@@ -261,7 +279,7 @@ function CardFormDialog({
                     value={field.value ?? NONE}
                     onValueChange={(v) => field.onChange(v === NONE ? null : v)}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Nenhuma" />
                     </SelectTrigger>
                     <SelectContent>
@@ -303,7 +321,7 @@ function CardFormDialog({
           </div>
 
           {isEdit && (
-            <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+            <div className="flex items-center justify-between rounded-2xl bg-secondary px-4 py-3">
               <Label htmlFor="arquivado" className="cursor-pointer">
                 Cartão arquivado
               </Label>
@@ -321,14 +339,21 @@ function CardFormDialog({
             </div>
           )}
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={isSubmitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {isSubmitting ? "Salvando…" : isEdit ? "Salvar" : "Criar cartão"}
             </Button>
@@ -372,23 +397,24 @@ export default function CartoesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             Cartões
           </h2>
           <p className="text-sm text-muted-foreground">
-            Cartões de crédito e seus ciclos de fechamento/vencimento.
+            Seus cartões de crédito e os ciclos de fechamento e vencimento.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <label className="flex w-fit cursor-pointer items-center gap-2 rounded-full bg-secondary px-3.5 py-2 text-xs font-medium text-muted-foreground">
             <Switch size="sm" checked={showArchived} onCheckedChange={setShowArchived} />
             Mostrar arquivados
           </label>
           <Button
-            className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+            size="lg"
+            className="w-full rounded-full px-4 font-semibold sm:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -415,11 +441,21 @@ export default function CartoesPage() {
       )}
 
       {!loading && !error && visible.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <CreditCard className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nenhum cartão cadastrado ainda.</p>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <CreditCard className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              Nenhum cartão cadastrado
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cadastre um cartão pra acompanhar limite, fechamento e vencimento.
+            </p>
+          </div>
           <Button
-            variant="outline"
+            size="lg"
+            className="rounded-full px-4 font-semibold"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -432,30 +468,34 @@ export default function CartoesPage() {
       )}
 
       {!loading && !error && visible.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 md:gap-5">
           {visible.map((card) => (
             <Card
               key={card.id}
-              className={cn("gap-3 px-5 py-5", card.arquivado && "opacity-60")}
-              style={{ borderTop: `3px solid ${card.cor}` }}
+              className={cn("gap-4 px-5 py-5", card.arquivado && "opacity-60")}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
                   <div
-                    className="flex size-9 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${card.cor}26` }}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${card.cor}1f` }}
                   >
                     <CreditCard className="size-4.5" style={{ color: card.cor }} />
                   </div>
-                  <div>
-                    <p className="font-heading text-sm font-semibold">{card.nome}</p>
-                    <p className="text-xs text-muted-foreground">{card.instituicao}</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-heading text-sm font-semibold">
+                      {card.nome}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {card.instituicao}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    className="rounded-full text-muted-foreground"
                     aria-label={`Editar ${card.nome}`}
                     onClick={() => {
                       setEditing(card);
@@ -466,7 +506,12 @@ export default function CartoesPage() {
                   </Button>
                   <ConfirmDeleteDialog
                     trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${card.nome}`}>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-full text-muted-foreground"
+                        aria-label={`Excluir ${card.nome}`}
+                      >
                         <Trash2 className="size-3.5" />
                       </Button>
                     }
@@ -477,25 +522,39 @@ export default function CartoesPage() {
                 </div>
               </div>
 
-              <Badge variant={card.escopo === "PF" ? "secondary" : "outline"} className="w-fit">
-                {card.escopo}
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">Limite</p>
+                <p className="font-numeric text-2xl font-semibold">
+                  {formatCurrency(card.limite)}
+                </p>
+              </div>
 
-              <p className="font-numeric text-xl font-semibold">
-                {formatCurrency(card.limite)}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">limite</span>
-              </p>
+              <div className="flex items-center gap-2 rounded-2xl bg-secondary px-3.5 py-2 text-xs text-muted-foreground">
+                <span>
+                  Fecha dia <span className="font-medium text-foreground">{card.diaFechamento}</span>
+                </span>
+                <span aria-hidden className="size-1 rounded-full bg-muted-foreground/50" />
+                <span>
+                  Vence dia <span className="font-medium text-foreground">{card.diaVencimento}</span>
+                </span>
+              </div>
 
-              <p className="text-xs text-muted-foreground">
-                Fecha dia {card.diaFechamento} · Vence dia {card.diaVencimento}
-              </p>
-
-              {card.arquivado && (
-                <Badge variant="secondary" className="w-fit gap-1">
-                  <Archive className="size-3" />
-                  Arquivado
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="secondary" className="gap-1.5">
+                  <span
+                    aria-hidden
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: card.cor }}
+                  />
+                  {card.escopo}
                 </Badge>
-              )}
+                {card.arquivado && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Archive className="size-3" />
+                    Arquivado
+                  </Badge>
+                )}
+              </div>
             </Card>
           ))}
         </div>

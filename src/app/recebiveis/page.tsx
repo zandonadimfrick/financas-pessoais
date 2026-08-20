@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { CheckCircle2, HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, HandCoins, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { receivableSchema } from "@/lib/validations";
 import type { Receivable, StatusRecebivel } from "@/lib/types";
@@ -184,9 +184,11 @@ function ReceivableFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar recebível" : "Novo recebível"}</DialogTitle>
+          <DialogTitle className="text-lg">
+            {isEdit ? "Editar recebível" : "Novo recebível"}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Atualize os dados do valor a receber."
@@ -194,22 +196,29 @@ function ReceivableFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="descricao">Descrição</Label>
-            <Input id="descricao" placeholder="Ex: Projeto freelance" {...register("descricao")} />
+            <Input
+              id="descricao"
+              placeholder="Ex: Projeto freelance"
+              className="h-9 rounded-full px-3.5"
+              {...register("descricao")}
+            />
             {errors.descricao && (
               <p className="text-xs text-destructive">{errors.descricao.message}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="valor">Valor</Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
+                placeholder="Ex: 1500,00"
+                className="h-9 rounded-full px-3.5"
                 {...register("valor", { valueAsNumber: true })}
               />
               {errors.valor && (
@@ -218,14 +227,19 @@ function ReceivableFormDialog({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="vencimento">Vencimento</Label>
-              <Input id="vencimento" type="date" {...register("vencimento")} />
+              <Input
+                id="vencimento"
+                type="date"
+                className="h-9 rounded-full px-3.5"
+                {...register("vencimento")}
+              />
               {errors.vencimento && (
                 <p className="text-xs text-destructive">{errors.vencimento.message}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Status</Label>
               <Controller
@@ -233,7 +247,7 @@ function ReceivableFormDialog({
                 name="status"
                 render={({ field }) => (
                   <Select value={field.value ?? "PENDENTE"} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -254,7 +268,7 @@ function ReceivableFormDialog({
                 name="escopo"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -272,22 +286,40 @@ function ReceivableFormDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="pagador">Pagador (opcional)</Label>
-            <Input id="pagador" placeholder="Ex: Cliente X" {...register("pagador")} />
+            <Input
+              id="pagador"
+              placeholder="Ex: Cliente X"
+              className="h-9 rounded-full px-3.5"
+              {...register("pagador")}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="observacao">Observação (opcional)</Label>
-            <Textarea id="observacao" rows={2} {...register("observacao")} />
+            <Textarea
+              id="observacao"
+              rows={2}
+              placeholder="Ex: Metade na assinatura, metade na entrega"
+              className="rounded-2xl px-3.5 py-2.5"
+              {...register("observacao")}
+            />
           </div>
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={isSubmitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {isSubmitting ? "Salvando…" : isEdit ? "Salvar" : "Criar recebível"}
             </Button>
@@ -352,18 +384,19 @@ export default function RecebiveisPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             A Receber
           </h2>
           <p className="text-sm text-muted-foreground">
-            Valores a receber: vendas, reembolsos e pendências.
+            O que ainda está para entrar: vendas, reembolsos e pendências.
           </p>
         </div>
         <Button
-          className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+          size="lg"
+          className="w-full rounded-full px-4 font-semibold sm:w-auto"
           onClick={() => {
             setEditing(null);
             setDialogOpen(true);
@@ -375,16 +408,30 @@ export default function RecebiveisPage() {
       </div>
 
       {!loading && !error && list.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">Pendente / atrasado</p>
-            <p className="font-numeric text-xl font-semibold text-expense">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <Clock className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Pendente / atrasado
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-expense">
               {formatCurrency(totals.pendente)}
             </p>
           </Card>
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">Já recebido</p>
-            <p className="font-numeric text-xl font-semibold text-income">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <CheckCircle2 className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Já recebido
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-income">
               {formatCurrency(totals.recebido)}
             </p>
           </Card>
@@ -400,11 +447,21 @@ export default function RecebiveisPage() {
       )}
 
       {!loading && !error && list.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <HandCoins className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Nenhum recebível cadastrado ainda.</p>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <HandCoins className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              Nada a receber por enquanto
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cadastre um valor a receber pra não perder o prazo de cobrança.
+            </p>
+          </div>
           <Button
-            variant="outline"
+            size="lg"
+            className="rounded-full px-4 font-semibold"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -417,77 +474,207 @@ export default function RecebiveisPage() {
       )}
 
       {!loading && !error && list.length > 0 && (
-        <Card className="px-0 py-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Pagador</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.map((r) => {
-                const overdue = isOverdue(r);
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.descricao}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.pagador || "—"}
-                    </TableCell>
-                    <TableCell>{formatDateBR(r.vencimento.slice(0, 10))}</TableCell>
-                    <TableCell>
-                      <Badge variant={overdue ? "destructive" : statusBadgeVariant(r.status)}>
+        <>
+          {/* Mobile: lista de cards — tabela em tela pequena obriga rolagem lateral. */}
+          <ul className="flex flex-col gap-2.5 md:hidden">
+            {list.map((r) => {
+              const overdue = isOverdue(r);
+              const recebido = r.status === "RECEBIDO";
+              const subtitulo = [
+                r.pagador || null,
+                `vence ${formatDateBR(r.vencimento.slice(0, 10))}`,
+              ]
+                .filter(Boolean)
+                .join(" • ");
+
+              return (
+                <li
+                  key={r.id}
+                  className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-3.5 ring-1 ring-foreground/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-full",
+                        recebido
+                          ? "bg-income/10 text-income"
+                          : overdue
+                            ? "bg-primary/10 text-expense"
+                            : "bg-secondary text-muted-foreground"
+                      )}
+                    >
+                      {recebido ? (
+                        <CheckCircle2 className="size-4.5" />
+                      ) : (
+                        <HandCoins className="size-4.5" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{r.descricao}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {subtitulo}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="font-numeric text-sm font-semibold text-income">
+                        {formatCurrency(r.valor)}
+                      </span>
+                      <Badge
+                        variant={overdue ? "destructive" : statusBadgeVariant(r.status)}
+                      >
                         {overdue ? "Atrasado" : STATUS_LABELS[r.status]}
                       </Badge>
-                    </TableCell>
-                    <TableCell className={cn("text-right font-numeric font-medium", "text-income")}>
-                      {formatCurrency(r.valor)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {r.status !== "RECEBIDO" && r.status !== "CANCELADO" && (
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            title="Marcar como recebido"
-                            onClick={() => markReceived(r)}
-                          >
-                            <CheckCircle2 className="size-3.5 text-income" />
-                          </Button>
-                        )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1">
+                    {r.status !== "RECEBIDO" && r.status !== "CANCELADO" && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-full"
+                        aria-label={`Marcar ${r.descricao} como recebido`}
+                        title="Marcar como recebido"
+                        onClick={() => markReceived(r)}
+                      >
+                        <CheckCircle2 className="size-3.5 text-income" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-full text-muted-foreground"
+                      aria-label={`Editar ${r.descricao}`}
+                      onClick={() => {
+                        setEditing(r);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <ConfirmDeleteDialog
+                      trigger={
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          aria-label={`Editar ${r.descricao}`}
-                          onClick={() => {
-                            setEditing(r);
-                            setDialogOpen(true);
-                          }}
+                          className="rounded-full text-muted-foreground"
+                          aria-label={`Excluir ${r.descricao}`}
                         >
-                          <Pencil className="size-3.5" />
+                          <Trash2 className="size-3.5" />
                         </Button>
-                        <ConfirmDeleteDialog
-                          trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${r.descricao}`}>
-                              <Trash2 className="size-3.5" />
+                      }
+                      title="Excluir recebível?"
+                      description={`"${r.descricao}" será excluído permanentemente.`}
+                      onConfirm={() => handleDelete(r)}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabela */}
+          <Card className="hidden px-0 py-0 md:flex">
+            <Table>
+              <TableHeader className="[&_tr]:border-border/60">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Descrição
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Pagador
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Vencimento
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Valor
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Ações
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {list.map((r) => {
+                  const overdue = isOverdue(r);
+                  return (
+                    <TableRow key={r.id} className="border-border/60">
+                      <TableCell className="px-5 py-3.5 font-medium">
+                        {r.descricao}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-muted-foreground">
+                        {r.pagador || "—"}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-muted-foreground">
+                        {formatDateBR(r.vencimento.slice(0, 10))}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5">
+                        <Badge variant={overdue ? "destructive" : statusBadgeVariant(r.status)}>
+                          {overdue ? "Atrasado" : STATUS_LABELS[r.status]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-5 py-3.5 text-right font-numeric font-semibold",
+                          "text-income"
+                        )}
+                      >
+                        {formatCurrency(r.valor)}
+                      </TableCell>
+                      <TableCell className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {r.status !== "RECEBIDO" && r.status !== "CANCELADO" && (
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="rounded-full"
+                              aria-label={`Marcar ${r.descricao} como recebido`}
+                              title="Marcar como recebido"
+                              onClick={() => markReceived(r)}
+                            >
+                              <CheckCircle2 className="size-3.5 text-income" />
                             </Button>
-                          }
-                          title="Excluir recebível?"
-                          description={`"${r.descricao}" será excluído permanentemente.`}
-                          onConfirm={() => handleDelete(r)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Card>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="rounded-full text-muted-foreground"
+                            aria-label={`Editar ${r.descricao}`}
+                            onClick={() => {
+                              setEditing(r);
+                              setDialogOpen(true);
+                            }}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <ConfirmDeleteDialog
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="rounded-full text-muted-foreground"
+                                aria-label={`Excluir ${r.descricao}`}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            }
+                            title="Excluir recebível?"
+                            description={`"${r.descricao}" será excluído permanentemente.`}
+                            onConfirm={() => handleDelete(r)}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
       )}
 
       <ReceivableFormDialog

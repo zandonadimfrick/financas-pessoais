@@ -4,7 +4,14 @@ import * as React from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Pencil, Plus, Repeat, Trash2 } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Pencil,
+  Plus,
+  Repeat,
+  Trash2,
+} from "lucide-react";
 
 import { recurringSchema } from "@/lib/validations";
 import type {
@@ -199,9 +206,11 @@ function RecurringFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar recorrência" : "Nova recorrência"}</DialogTitle>
+          <DialogTitle className="text-lg">
+            {isEdit ? "Editar recorrência" : "Nova recorrência"}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Atualize os dados da assinatura/recorrência."
@@ -209,22 +218,29 @@ function RecurringFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" placeholder="Ex: Netflix" {...register("nome")} />
+            <Input
+              id="nome"
+              placeholder="Ex: Netflix"
+              className="h-9 rounded-full px-3.5"
+              {...register("nome")}
+            />
             {errors.nome && (
               <p className="text-xs text-destructive">{errors.nome.message}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="valor">Valor</Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
+                placeholder="Ex: 39,90"
+                className="h-9 rounded-full px-3.5"
                 {...register("valor", { valueAsNumber: true })}
               />
               {errors.valor && (
@@ -238,7 +254,7 @@ function RecurringFormDialog({
                 name="tipo"
                 render={({ field }) => (
                   <Select value={field.value ?? "SAIDA"} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -251,7 +267,7 @@ function RecurringFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Periodicidade</Label>
               <Controller
@@ -259,7 +275,7 @@ function RecurringFormDialog({
                 name="periodicidade"
                 render={({ field }) => (
                   <Select value={field.value ?? "MENSAL"} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Periodicidade" />
                     </SelectTrigger>
                     <SelectContent>
@@ -280,6 +296,8 @@ function RecurringFormDialog({
                 type="number"
                 min={1}
                 max={31}
+                placeholder="Ex: 5"
+                className="h-9 rounded-full px-3.5"
                 {...register("diaCobranca", { valueAsNumber: true })}
               />
               {errors.diaCobranca && (
@@ -288,7 +306,7 @@ function RecurringFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Escopo</Label>
               <Controller
@@ -296,7 +314,7 @@ function RecurringFormDialog({
                 name="escopo"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -312,7 +330,12 @@ function RecurringFormDialog({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="proximaCobranca">Próxima cobrança (opcional)</Label>
-              <Input id="proximaCobranca" type="date" {...register("proximaCobranca")} />
+              <Input
+                id="proximaCobranca"
+                type="date"
+                className="h-9 rounded-full px-3.5"
+                {...register("proximaCobranca")}
+              />
             </div>
           </div>
 
@@ -326,7 +349,7 @@ function RecurringFormDialog({
                   value={field.value ?? NONE}
                   onValueChange={(v) => field.onChange(v === NONE ? null : v)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                     <SelectValue placeholder="Nenhuma" />
                   </SelectTrigger>
                   <SelectContent>
@@ -342,7 +365,7 @@ function RecurringFormDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+          <div className="flex items-center justify-between rounded-2xl bg-secondary px-4 py-3">
             <Label htmlFor="ativo" className="cursor-pointer">
               Recorrência ativa
             </Label>
@@ -359,14 +382,21 @@ function RecurringFormDialog({
             />
           </div>
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={isSubmitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {isSubmitting ? "Salvando…" : isEdit ? "Salvar" : "Criar recorrência"}
             </Button>
@@ -438,18 +468,19 @@ export default function RecorrentesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             Recorrentes
           </h2>
           <p className="text-sm text-muted-foreground">
-            Assinaturas e lançamentos recorrentes (entradas e saídas).
+            Assinaturas e lançamentos que se repetem, entrando e saindo.
           </p>
         </div>
         <Button
-          className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+          size="lg"
+          className="w-full rounded-full px-4 font-semibold sm:w-auto"
           onClick={() => {
             setEditing(null);
             setDialogOpen(true);
@@ -461,24 +492,37 @@ export default function RecorrentesPage() {
       </div>
 
       {!loading && !error && list.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">
-              Custo recorrente mensal estimado (saídas ativas)
-            </p>
-            <p className="font-numeric text-xl font-semibold text-expense">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-5">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <ArrowUpRight className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Custo mensal estimado
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-expense">
               {formatCurrency(monthlyTotals.saida)}
             </p>
             <p className="text-xs text-muted-foreground">
-              Estimativa: semanal ×4,33, anual ÷12, diária ×30.
+              Só saídas ativas. Estimativa: semanal ×4,33, anual ÷12, diária ×30.
             </p>
           </Card>
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">
-              Receita recorrente mensal estimada (entradas ativas)
-            </p>
-            <p className="font-numeric text-xl font-semibold text-income">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <ArrowDownLeft className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Receita mensal estimada
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-income">
               {formatCurrency(monthlyTotals.entrada)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Só entradas ativas, na mesma base de cálculo.
             </p>
           </Card>
         </div>
@@ -493,13 +537,21 @@ export default function RecorrentesPage() {
       )}
 
       {!loading && !error && list.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <Repeat className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Nenhuma recorrência cadastrada ainda.
-          </p>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <Repeat className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              Nenhuma recorrência cadastrada
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cadastre suas assinaturas pra saber quanto elas custam por mês.
+            </p>
+          </div>
           <Button
-            variant="outline"
+            size="lg"
+            className="rounded-full px-4 font-semibold"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -512,53 +564,75 @@ export default function RecorrentesPage() {
       )}
 
       {!loading && !error && list.length > 0 && (
-        <Card className="px-0 py-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Periodicidade</TableHead>
-                <TableHead>Próxima cobrança</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Ativa</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.map((r) => (
-                <TableRow key={r.id} className={cn(!r.ativo && "opacity-60")}>
-                  <TableCell className="font-medium">{r.nome}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {r.categoryId ? categoriesById.get(r.categoryId)?.nome ?? "—" : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{PERIODICIDADE_LABELS[r.periodicidade]}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {r.proximaCobranca ? formatDateBR(r.proximaCobranca.slice(0, 10)) : "—"}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "text-right font-numeric font-medium",
-                      r.tipo === "ENTRADA" ? "text-income" : "text-expense"
-                    )}
-                  >
-                    {r.tipo === "ENTRADA" ? "+" : "-"}
-                    {formatCurrency(r.valor)}
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      size="sm"
-                      checked={r.ativo}
-                      onCheckedChange={(checked) => toggleAtivo(r, checked)}
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+        <>
+          {/* Mobile: lista de cards — tabela em tela pequena obriga rolagem lateral. */}
+          <ul className="flex flex-col gap-2.5 md:hidden">
+            {list.map((r) => {
+              const entrada = r.tipo === "ENTRADA";
+              const categoria = r.categoryId
+                ? categoriesById.get(r.categoryId)?.nome
+                : null;
+              const subtitulo = [
+                categoria,
+                PERIODICIDADE_LABELS[r.periodicidade],
+                r.proximaCobranca
+                  ? `próx. ${formatDateBR(r.proximaCobranca.slice(0, 10))}`
+                  : `dia ${r.diaCobranca}`,
+              ]
+                .filter(Boolean)
+                .join(" • ");
+
+              return (
+                <li
+                  key={r.id}
+                  className={cn(
+                    "flex flex-col gap-2 rounded-2xl bg-card px-4 py-3.5 ring-1 ring-foreground/10",
+                    !r.ativo && "opacity-60"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-full",
+                        entrada
+                          ? "bg-income/10 text-income"
+                          : "bg-primary/10 text-expense"
+                      )}
+                    >
+                      <Repeat className="size-4.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{r.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {subtitulo}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 font-numeric text-sm font-semibold",
+                        entrada ? "text-income" : "text-expense"
+                      )}
+                    >
+                      {entrada ? "+" : "-"}
+                      {formatCurrency(r.valor)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      <Switch
+                        size="sm"
+                        checked={r.ativo}
+                        aria-label={`Ativar ${r.nome}`}
+                        onCheckedChange={(checked) => toggleAtivo(r, checked)}
+                      />
+                      {r.ativo ? "Ativa" : "Pausada"}
+                    </label>
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon-sm"
+                        className="rounded-full text-muted-foreground"
                         aria-label={`Editar ${r.nome}`}
                         onClick={() => {
                           setEditing(r);
@@ -569,7 +643,12 @@ export default function RecorrentesPage() {
                       </Button>
                       <ConfirmDeleteDialog
                         trigger={
-                          <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${r.nome}`}>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="rounded-full text-muted-foreground"
+                            aria-label={`Excluir ${r.nome}`}
+                          >
                             <Trash2 className="size-3.5" />
                           </Button>
                         }
@@ -578,12 +657,112 @@ export default function RecorrentesPage() {
                         onConfirm={() => handleDelete(r)}
                       />
                     </div>
-                  </TableCell>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabela */}
+          <Card className="hidden px-0 py-0 md:flex">
+            <Table>
+              <TableHeader className="[&_tr]:border-border/60">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Nome
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Categoria
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Periodicidade
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Próxima cobrança
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Valor
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Ativa
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Ações
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHeader>
+              <TableBody>
+                {list.map((r) => (
+                  <TableRow
+                    key={r.id}
+                    className={cn("border-border/60", !r.ativo && "opacity-60")}
+                  >
+                    <TableCell className="px-5 py-3.5 font-medium">{r.nome}</TableCell>
+                    <TableCell className="px-5 py-3.5 text-muted-foreground">
+                      {r.categoryId ? categoriesById.get(r.categoryId)?.nome ?? "—" : "—"}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      <Badge variant="secondary">
+                        {PERIODICIDADE_LABELS[r.periodicidade]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-muted-foreground">
+                      {r.proximaCobranca ? formatDateBR(r.proximaCobranca.slice(0, 10)) : "—"}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-5 py-3.5 text-right font-numeric font-semibold",
+                        r.tipo === "ENTRADA" ? "text-income" : "text-expense"
+                      )}
+                    >
+                      {r.tipo === "ENTRADA" ? "+" : "-"}
+                      {formatCurrency(r.valor)}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      <Switch
+                        size="sm"
+                        checked={r.ativo}
+                        aria-label={`Ativar ${r.nome}`}
+                        onCheckedChange={(checked) => toggleAtivo(r, checked)}
+                      />
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-full text-muted-foreground"
+                          aria-label={`Editar ${r.nome}`}
+                          onClick={() => {
+                            setEditing(r);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <ConfirmDeleteDialog
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="rounded-full text-muted-foreground"
+                              aria-label={`Excluir ${r.nome}`}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          }
+                          title="Excluir recorrência?"
+                          description={`"${r.nome}" será excluída. Se houver transações vinculadas, ela será desativada em vez de excluída.`}
+                          onConfirm={() => handleDelete(r)}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
       )}
 
       <RecurringFormDialog

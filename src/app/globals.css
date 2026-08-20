@@ -46,120 +46,130 @@
   --color-expense: var(--expense);
   --color-expense-foreground: var(--expense-foreground);
 
-  /* Gradiente accent futurista: indigo -> violet -> cyan */
+  /* Gradiente accent (nomes históricos "indigo/violet/cyan" mantidos por
+     compatibilidade — hoje são 3 stops coral/laranja monocromáticos). */
   --color-accent-indigo: var(--accent-indigo);
   --color-accent-violet: var(--accent-violet);
   --color-accent-cyan: var(--accent-cyan);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* Escala de raios — muito arredondada, no espírito da referência.
+     lg (1.25rem/20px) é o raio dos botões e inputs: em alturas de 32-40px
+     ele satura e vira pílula, que é exatamente o efeito desejado.
+     2xl (1.5rem/24px) é o raio de card; 3xl (2rem/32px) é o "painel". */
+  --radius-sm: calc(var(--radius) * 0.4);
+  --radius-md: calc(var(--radius) * 0.6);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.1);
+  --radius-2xl: calc(var(--radius) * 1.2);
+  --radius-3xl: calc(var(--radius) * 1.6);
+  --radius-4xl: calc(var(--radius) * 2);
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 1.25rem;
   color-scheme: light;
 
-  /* Light mode — "verde dinheiro": branco com leve tom esverdeado, marca em
-     emerald-700 pra contraste confortável sobre fundo claro. */
-  --background: #f4faf7;
-  --foreground: #0c1a13;
+  /* Light mode (TEMA PADRÃO) — "coral sobre papel": fundo cinza-claro neutro
+     como moldura, painéis/cards em branco puro por cima, marca em coral.
+     Texto quase preto e cinza médio, sem nenhum matiz de cor. */
+  --background: #ececec;
+  --foreground: #111111;
   --card: #ffffff;
-  --card-foreground: #0c1a13;
+  --card-foreground: #111111;
   --popover: #ffffff;
-  --popover-foreground: #0c1a13;
-  --primary: #047857;
+  --popover-foreground: #111111;
+  --primary: #e8593f;
   --primary-foreground: #ffffff;
-  --secondary: #e6f2ec;
-  --secondary-foreground: #0f2b1e;
-  --muted: #e6f2ec;
-  --muted-foreground: #4b5f56;
-  --accent: #e6f2ec;
-  --accent-foreground: #0f2b1e;
-  --destructive: #e11d48;
+  --secondary: #f4f4f4;
+  --secondary-foreground: #1c1c1c;
+  --muted: #f1f1f1;
+  --muted-foreground: #6b6b6b;
+  --accent: #efefef;
+  --accent-foreground: #1c1c1c;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #d9ebe1;
-  --input: #d9ebe1;
-  --ring: #047857;
-  --chart-1: #047857;
-  --chart-2: #10b981;
-  --chart-3: #34d399;
-  --chart-4: #6ee7b7;
-  --chart-5: #a7f3d0;
+  --border: #e4e4e4;
+  --input: #e4e4e4;
+  --ring: #e8593f;
+  /* Escala de gráficos: coral -> laranja -> âmbar -> terracota + neutro */
+  --chart-1: #e8593f;
+  --chart-2: #f97316;
+  --chart-3: #fbbf24;
+  --chart-4: #c2410c;
+  --chart-5: #a3a3a3;
+  /* A sidebar vive DENTRO do painel branco: mesma cor de card, separada
+     apenas pela borda. */
   --sidebar: #ffffff;
-  --sidebar-foreground: #0c1a13;
-  --sidebar-primary: #047857;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #e8593f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e6f2ec;
-  --sidebar-accent-foreground: #0f2b1e;
-  --sidebar-border: #d9ebe1;
-  --sidebar-ring: #047857;
+  --sidebar-accent: #f4f4f4;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #e8e8e8;
+  --sidebar-ring: #e8593f;
 
-  /* Entrada mais clara/saturada que --primary pra não se confundir com a
-     cor de marca; saída em rosa-vermelho, distinta de ambos os verdes. */
-  --income: #10b981;
+  /* Entrada em verde (créditos, como na referência mobile); saída no próprio
+     coral da marca — mantém a paleta monocromática e é o único vermelho
+     "de valor" do sistema (--destructive fica reservado a ações perigosas). */
+  --income: #16a34a;
   --income-foreground: #ffffff;
-  --expense: #e11d48;
+  --expense: #e8593f;
   --expense-foreground: #ffffff;
 
-  /* Gradiente accent monocromático verde: floresta -> esmeralda -> menta */
-  --accent-indigo: #047857;
-  --accent-violet: #10b981;
-  --accent-cyan: #6ee7b7;
+  /* Gradiente accent monocromático coral: laranja -> coral -> terracota */
+  --accent-indigo: #f97316;
+  --accent-violet: #e8593f;
+  --accent-cyan: #c2410c;
 }
 
 .dark {
   color-scheme: dark;
 
-  /* Dark mode — verde-preto profundo, marca em emerald-500 vívido. */
-  --background: #05100b;
-  --foreground: #eaf5ef;
-  --card: rgb(15 32 24 / 0.55);
-  --card-foreground: #eaf5ef;
-  --popover: rgb(8 18 13 / 0.96);
-  --popover-foreground: #eaf5ef;
-  --primary: #10b981;
-  --primary-foreground: #052e1f;
-  --secondary: #0f2318;
-  --secondary-foreground: #dff5e8;
-  --muted: #0d1f16;
-  --muted-foreground: #9fb8ab;
-  --accent: #12271b;
-  --accent-foreground: #eaf5ef;
-  --destructive: #fb7185;
-  --destructive-foreground: #1a0509;
-  --border: rgb(180 255 210 / 10%);
-  --input: rgb(180 255 210 / 12%);
-  --ring: #34d399;
-  --chart-1: #10b981;
-  --chart-2: #34d399;
-  --chart-3: #6ee7b7;
-  --chart-4: #a7f3d0;
-  --chart-5: #065f46;
-  --sidebar: rgb(5 16 11 / 0.72);
-  --sidebar-foreground: #eaf5ef;
-  --sidebar-primary: #10b981;
-  --sidebar-primary-foreground: #052e1f;
-  --sidebar-accent: rgb(16 185 129 / 0.14);
-  --sidebar-accent-foreground: #eaf5ef;
-  --sidebar-border: rgb(180 255 210 / 8%);
-  --sidebar-ring: #34d399;
+  /* Dark mode — cinza-carvão neutro/quente com o mesmo desenho do light:
+     "moldura" mais escura, painéis/cards um degrau acima, coral mais claro
+     pra brilhar sobre o escuro. */
+  --background: #121212;
+  --foreground: #f0eeec;
+  --card: #1c1c1c;
+  --card-foreground: #f0eeec;
+  --popover: #1f1f1f;
+  --popover-foreground: #f0eeec;
+  --primary: #ff6b4f;
+  --primary-foreground: #2b0d05;
+  --secondary: #242424;
+  --secondary-foreground: #f0eeec;
+  --muted: #202020;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #f0eeec;
+  --destructive: #f87171;
+  --destructive-foreground: #2b0505;
+  --border: rgb(255 255 255 / 10%);
+  --input: rgb(255 255 255 / 14%);
+  --ring: #ff6b4f;
+  --chart-1: #ff6b4f;
+  --chart-2: #fb923c;
+  --chart-3: #fbbf24;
+  --chart-4: #ea580c;
+  --chart-5: #737373;
+  --sidebar: #1c1c1c;
+  --sidebar-foreground: #f0eeec;
+  --sidebar-primary: #ff6b4f;
+  --sidebar-primary-foreground: #2b0d05;
+  --sidebar-accent: #242424;
+  --sidebar-accent-foreground: #f0eeec;
+  --sidebar-border: rgb(255 255 255 / 8%);
+  --sidebar-ring: #ff6b4f;
 
-  /* Entrada mais clara/saturada que --primary pra diferenciar de "marca";
-     saída em rosa-coral, herdada do tema anterior — já funciona bem aqui. */
   --income: #4ade80;
   --income-foreground: #052e14;
-  --expense: #fb7185;
-  --expense-foreground: #3a0512;
+  --expense: #ff6b4f;
+  --expense-foreground: #2b0d05;
 
-  /* Gradiente accent monocromático verde: floresta profundo -> esmeralda -> menta claro */
-  --accent-indigo: #064e3b;
-  --accent-violet: #10b981;
-  --accent-cyan: #6ee7b7;
+  /* Gradiente accent coral, versão clara pra ler bem sobre fundo escuro */
+  --accent-indigo: #fdba74;
+  --accent-violet: #ff7a5c;
+  --accent-cyan: #f2542d;
 }
 
 @layer base {
@@ -183,13 +193,18 @@
 }
 
 @layer utilities {
-  /* Painel "glass": fundo semi-transparente + blur, usar junto de bg-card */
+  /*
+    Painel "glass". O tema agora é chapado (superfícies opacas), então o blur
+    virou um detalhe sutil — só aparece quando o elemento tem fundo
+    translúcido (ex.: a topbar com `bg-card/85`). A classe é mantida porque
+    várias telas dependem dela.
+  */
   .glass {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
   }
 
-  /* Texto com gradiente accent futurista */
+  /* Texto com gradiente accent (coral) */
   .text-gradient-accent {
     background-image: linear-gradient(
       135deg,
@@ -202,7 +217,7 @@
     color: transparent;
   }
 
-  /* Fundo com gradiente accent futurista */
+  /* Fundo com gradiente accent (coral) */
   .bg-gradient-accent {
     background-image: linear-gradient(
       135deg,

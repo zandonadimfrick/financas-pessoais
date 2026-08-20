@@ -26,25 +26,29 @@ const GRANULARITY_TABS: { value: HeatmapGranularity; label: string }[] = [
 ];
 
 /**
- * Escala de 5 níveis (0 a 4) verde "dinheiro" — quanto mais escuro/vívido,
- * MAIS gasto teve. No tema escuro o fundo já é bem escuro, então a
- * progressão vai de "quase invisível" pra "bem brilhante" (senão o nível
- * mais alto sumiria contra o fundo); no tema claro a progressão é a
- * literal claro → escuro.
+ * Escala de 5 níveis (0 a 4) na família CORAL da marca — quanto mais
+ * escuro/saturado, MAIS gasto teve. No tema escuro o fundo já é bem escuro,
+ * então a progressão vai de "quase invisível" pra coral brilhante (senão o
+ * nível mais alto sumiria contra o fundo); no tema claro é a progressão
+ * literal claro → escuro, terminando na terracota `--chart-4`.
  */
 const LEVEL_CLASSES: Record<number, string> = {
-  0: "bg-[#eef5f1] dark:bg-white/5",
-  1: "bg-[#c8e6d3] dark:bg-[#0f3d29]",
-  2: "bg-[#8fd1ab] dark:bg-[#15803d]",
-  3: "bg-[#3fae74] dark:bg-[#22c55e]",
-  4: "bg-[#0d5c39] dark:bg-[#4ade80]",
+  0: "bg-[#f2f2f2] dark:bg-white/5",
+  1: "bg-[#fde8e3] dark:bg-[#4a1c10]",
+  2: "bg-[#f9bfae] dark:bg-[#8c3418]",
+  3: "bg-[#ef7f5e] dark:bg-[#e0512d]",
+  4: "bg-[#c2410c] dark:bg-[#ff6b4f]",
 };
 
+/**
+ * Cor do rótulo dentro de cada bloco (visões Meses/Anos). Escolhida nível a
+ * nível para fechar 4.5:1 com o fundo daquele nível nos dois temas.
+ */
 const LEVEL_TEXT_CLASSES: Record<number, string> = {
   0: "text-muted-foreground",
-  1: "text-foreground/80",
-  2: "text-foreground/90 dark:text-white",
-  3: "text-white dark:text-background",
+  1: "text-foreground",
+  2: "text-foreground",
+  3: "text-foreground dark:text-background",
   4: "text-white dark:text-background",
 };
 
@@ -150,7 +154,7 @@ const cellVariants = {
   visible: { opacity: 1, scale: 1 },
 };
 
-export function ExpenseHeatmap() {
+export function ExpenseHeatmap({ className }: { className?: string }) {
   const currentYear = new Date().getFullYear();
   const [granularity, setGranularity] = useState<HeatmapGranularity>("day");
   const [year, setYear] = useState(currentYear);
@@ -164,17 +168,22 @@ export function ExpenseHeatmap() {
   );
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
-        <CardTitle className="flex items-center gap-2">
-          <CalendarRange className="size-4 text-muted-foreground" />
-          Mapa de gastos
-        </CardTitle>
+        <div className="flex flex-col gap-1">
+          <CardTitle className="flex items-center gap-2">
+            <CalendarRange className="size-4 text-muted-foreground" aria-hidden />
+            Mapa de gastos
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Quanto mais escuro, maior o gasto do período
+          </p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {granularity !== "year" && (
             <Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
-              <SelectTrigger className="h-8 w-[92px]" size="sm">
+              <SelectTrigger className="h-8 w-[92px] rounded-full" size="sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -191,9 +200,13 @@ export function ExpenseHeatmap() {
             value={granularity}
             onValueChange={(value) => setGranularity(value as HeatmapGranularity)}
           >
-            <TabsList>
+            <TabsList className="rounded-full bg-secondary p-1">
               {GRANULARITY_TABS.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="rounded-full px-3 data-active:bg-foreground data-active:text-background dark:data-active:border-transparent dark:data-active:bg-foreground dark:data-active:text-background"
+                >
                   {tab.label}
                 </TabsTrigger>
               ))}

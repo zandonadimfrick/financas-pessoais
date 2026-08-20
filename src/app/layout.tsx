@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { PageTransition } from "@/components/layout/page-transition";
 
 const fontSans = Inter({
@@ -34,35 +35,38 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${fontSans.variable} ${fontHeading.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-svh bg-background text-foreground">
+      <body className="bg-background text-foreground">
         <ThemeProvider>
           <TooltipProvider>
-            {/* Fundo "aurora": blobs de gradiente suaves e desfocados */}
-            <div
-              aria-hidden
-              className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-            >
-              <div className="bg-accent-indigo absolute -top-40 -left-32 size-[32rem] rounded-full opacity-20 blur-[120px]" />
-              <div className="bg-accent-violet absolute top-1/3 -right-40 size-[28rem] rounded-full opacity-15 blur-[120px]" />
-              <div className="bg-accent-cyan absolute -bottom-40 left-1/4 size-[26rem] rounded-full opacity-10 blur-[120px]" />
-            </div>
-
             {/*
-              Shell full-bleed: sem max-w artificial aqui, pra telas grandes
-              (>=1536px/1920px) usarem o espaço disponível. O padding da área
-              de conteúdo escala por breakpoint — páginas de conteúdo podem
-              impor seu próprio max-w interno se fizer sentido pra elas.
+              Shell no estilo da referência: a página inteira é o cinza
+              `--background` e o app vive dentro de um "painel" branco
+              (`bg-card`) com cantos bem arredondados e uma margem ao redor em
+              telas md+. No mobile o painel ocupa a tela toda, sem margem nem
+              raio, pra não desperdiçar espaço.
+
+              Full-bleed de propósito: nenhum `max-w` aqui, pra telas grandes
+              usarem o espaço disponível. Páginas podem impor seu próprio
+              `max-w` interno se fizer sentido pra elas.
             */}
-            <div className="flex min-h-svh w-full">
-              <Sidebar />
-              <div className="flex min-h-svh flex-1 flex-col">
-                <Topbar />
-                <main className="flex-1 p-4 md:p-6 xl:p-8 2xl:p-10">
-                  <PageTransition>{children}</PageTransition>
-                </main>
+            <div className="flex h-svh w-full flex-col md:p-3">
+              <div className="flex min-h-0 flex-1 overflow-hidden bg-card md:rounded-[2rem] md:ring-1 md:ring-foreground/8">
+                <Sidebar />
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <Topbar />
+                  {/*
+                    A área de conteúdo é o container de rolagem do app. O
+                    `pb-28` no mobile reserva espaço pra barra de navegação
+                    inferior fixa.
+                  */}
+                  <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6 xl:p-8 2xl:p-10">
+                    <PageTransition>{children}</PageTransition>
+                  </main>
+                </div>
               </div>
             </div>
 
+            <MobileNav />
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>

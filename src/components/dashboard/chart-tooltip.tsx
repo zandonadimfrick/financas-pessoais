@@ -3,10 +3,11 @@
 import type { TooltipContentProps } from "recharts";
 
 import { formatCurrency, formatDateLongBR } from "@/lib/format";
+import { MONEY_SMALL_EXPENSE, MONEY_SMALL_INCOME } from "@/components/dashboard/tone";
 
 /**
- * Tooltip custom do gráfico principal, estilizado como card glass.
- * Recebe o payload padrão do Recharts (entradas/saidas por dia).
+ * Tooltip do gráfico principal — mesmo desenho dos cards: superfície chapada,
+ * canto bem arredondado e um ring sutil em vez de sombra pesada.
  */
 export function ChartTooltip({
   active,
@@ -19,24 +20,24 @@ export function ChartTooltip({
   const saidas = payload.find((p) => p.dataKey === "saidas")?.value ?? 0;
 
   return (
-    <div className="glass rounded-xl border border-border/50 bg-popover px-3 py-2.5 text-xs shadow-lg">
-      <p className="mb-1.5 font-medium text-popover-foreground">{formatDateLongBR(label)}</p>
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-4">
+    <div className="rounded-2xl bg-popover px-3.5 py-3 text-xs text-popover-foreground shadow-lg ring-1 ring-foreground/10">
+      <p className="mb-2 font-medium">{formatDateLongBR(label)}</p>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-2 rounded-full bg-income" />
+            <span aria-hidden className="size-2 rounded-full bg-income" />
             Entradas
           </span>
-          <span className="font-numeric font-medium text-income">
+          <span className={`font-numeric font-semibold ${MONEY_SMALL_INCOME}`}>
             {formatCurrency(Number(entradas))}
           </span>
         </div>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="size-2 rounded-full bg-expense" />
+            <span aria-hidden className="size-2 rounded-full bg-expense" />
             Saídas
           </span>
-          <span className="font-numeric font-medium text-expense">
+          <span className={`font-numeric font-semibold ${MONEY_SMALL_EXPENSE}`}>
             {formatCurrency(Number(saidas))}
           </span>
         </div>

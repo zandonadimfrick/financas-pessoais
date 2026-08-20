@@ -12,7 +12,6 @@ import {
   LayoutDashboard,
   Menu,
   Repeat,
-  Sparkles,
   Wallet,
 } from "lucide-react";
 
@@ -39,16 +38,29 @@ function isItemActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
+/**
+ * Marca: disco escuro com monograma + título em duas linhas, no estilo da
+ * referência. O disco usa `bg-foreground`/`text-background`, então ele
+ * inverte sozinho no tema escuro (círculo claro, letra escura).
+ */
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5 px-2">
-      <div className="bg-gradient-accent flex size-9 shrink-0 items-center justify-center rounded-xl shadow-[0_0_24px_-4px_var(--accent-indigo)]">
-        <Sparkles className="size-4.5 text-white" />
-      </div>
-      <span className="text-gradient-accent font-heading text-lg font-semibold tracking-tight">
-        Finanças
+    <Link
+      href="/"
+      className="flex items-center gap-3 rounded-2xl px-2 py-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-foreground text-background">
+        <span className="font-heading text-base leading-none font-bold">F</span>
       </span>
-    </div>
+      <span className="flex min-w-0 flex-col leading-tight">
+        <span className="font-heading text-base font-semibold tracking-tight text-foreground">
+          Finanças
+        </span>
+        <span className="truncate text-xs text-muted-foreground">
+          Painel Pessoal
+        </span>
+      </span>
+    </Link>
   );
 }
 
@@ -62,7 +74,7 @@ function NavList({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav aria-label="Navegação principal" className="flex flex-col gap-1.5">
       {navItems.map((item) => {
         const active = isItemActive(pathname, item.href);
         const Icon = item.icon;
@@ -71,22 +83,28 @@ function NavList({
             key={item.href}
             href={item.href}
             onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              "relative flex min-h-11 items-center gap-3 rounded-2xl px-3.5 py-3 text-sm transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
+                ? "font-semibold text-foreground"
+                : "font-medium text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
             )}
           >
             {active && (
               <motion.span
                 layoutId={`${layoutIdPrefix}-active-pill`}
-                className="glass absolute inset-0 rounded-xl border border-primary/25 bg-gradient-to-r from-accent-indigo/15 via-accent-violet/15 to-accent-cyan/15"
+                className="absolute inset-0 rounded-2xl bg-sidebar-accent"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             )}
-            <Icon className="relative z-10 size-4.5 shrink-0" />
-            <span className="relative z-10">{item.label}</span>
+            <Icon
+              className={cn(
+                "relative z-10 size-4.5 shrink-0 transition-colors",
+                active && "text-primary"
+              )}
+            />
+            <span className="relative z-10 truncate">{item.label}</span>
           </Link>
         );
       })}
@@ -94,19 +112,29 @@ function NavList({
   );
 }
 
-/** Sidebar fixa à esquerda, visível apenas em telas md+. */
+/**
+ * Sidebar do desktop. Fica DENTRO do painel arredondado do shell (ver
+ * `src/app/layout.tsx`), por isso arredonda o próprio canto esquerdo e ocupa
+ * 100% da altura do painel — quem rola é apenas a lista de links.
+ */
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="glass sticky top-0 hidden h-svh w-64 shrink-0 flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 md:flex 2xl:w-72 2xl:px-5">
+    <aside className="hidden h-full w-64 shrink-0 flex-col gap-7 border-r border-sidebar-border bg-sidebar px-4 py-6 md:flex md:rounded-l-[2rem] 2xl:w-72 2xl:px-5">
       <Logo />
-      <NavList pathname={pathname} layoutIdPrefix="desktop" />
+      <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+        <NavList pathname={pathname} layoutIdPrefix="desktop" />
+      </div>
     </aside>
   );
 }
 
-/** Trigger + Sheet para navegação em telas pequenas (colapsável). */
+/**
+ * Trigger + Sheet para telas pequenas. A barra inferior
+ * (`src/components/layout/mobile-nav.tsx`) cobre os 5 destinos mais usados;
+ * este menu continua existindo pra dar acesso aos 7 links completos.
+ */
 export function MobileSidebarTrigger() {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
@@ -117,8 +145,8 @@ export function MobileSidebarTrigger() {
         render={
           <Button
             variant="ghost"
-            size="icon"
-            className="md:hidden"
+            size="icon-lg"
+            className="rounded-full md:hidden"
             aria-label="Abrir menu de navegação"
           />
         }
@@ -127,11 +155,11 @@ export function MobileSidebarTrigger() {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[min(80vw,17rem)] border-r border-sidebar-border bg-sidebar px-4 pt-6"
+        className="w-[min(84vw,18rem)] border-r border-sidebar-border bg-sidebar px-4 pt-6"
       >
         <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
         <Logo />
-        <div className="mt-6">
+        <div className="mt-7">
           <NavList
             pathname={pathname}
             layoutIdPrefix="mobile"

@@ -7,12 +7,17 @@ import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import {
+  ArrowDownLeft,
   ArrowLeftRight,
   ArrowRightLeft,
+  ArrowUpRight,
   FileText,
   Pencil,
   Plus,
+  Search,
+  Sparkles,
   Trash2,
+  Wallet,
   X,
 } from "lucide-react";
 
@@ -25,6 +30,7 @@ import type {
   TipoLancamento,
 } from "@/lib/types";
 import { useEscopoStore } from "@/lib/store";
+import { parseLancamento } from "@/lib/parse-lancamento";
 import { useFetch } from "@/hooks/use-fetch";
 import { formatCurrency, formatDateBR } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -80,6 +86,13 @@ interface FormValues {
 
 const NONE = "__none__";
 const NEW_CATEGORY = "__new__";
+
+/** Filtro de tipo em pílulas (substitui o antigo `Select` de Tipo). */
+const TIPO_FILTROS: { value: "TODOS" | TipoLancamento; label: string }[] = [
+  { value: "TODOS", label: "Todos" },
+  { value: "ENTRADA", label: "Entradas" },
+  { value: "SAIDA", label: "Saídas" },
+];
 
 function toISODateStr(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -154,26 +167,42 @@ function NewCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xs">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-xs">
         <DialogHeader>
-          <DialogTitle>Nova categoria</DialogTitle>
+          <DialogTitle className="text-lg">Nova categoria</DialogTitle>
           <DialogDescription>
             Categoria do tipo {tipo === "ENTRADA" ? "entrada" : "saída"}.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="categoria-nome">Nome</Label>
-            <Input id="categoria-nome" placeholder="Ex: Mercado" {...register("nome")} />
+            <Input
+              id="categoria-nome"
+              placeholder="Ex: Mercado"
+              className="h-9 rounded-full px-3.5"
+              {...register("nome")}
+            />
             {errors.nome && (
               <p className="text-xs text-destructive">{errors.nome.message}</p>
             )}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSubmitting}
+              className="rounded-full px-4 font-semibold"
+            >
               {isSubmitting ? "Criando…" : "Criar"}
             </Button>
           </DialogFooter>
@@ -191,6 +220,7 @@ function TransactionFormDialog({
   accounts,
   cards,
   escopoDefault,
+  prefill,
   onSaved,
   onCategoryCreated,
 }: {
@@ -201,6 +231,8 @@ function TransactionFormDialog({
   accounts: Account[];
   cards: CardEntity[];
   escopoDefault: string | null;
+  /** Valores vindos do lançamento em linguagem natural, para conferência. */
+  prefill: Partial<FormValues> | null;
   onSaved: () => void;
   onCategoryCreated: () => Promise<void> | void;
 }) {
@@ -239,9 +271,9 @@ function TransactionFormDialog({
         cardId: transaction.cardId,
       });
     } else {
-      reset(emptyValues(escopoDefault));
+      reset({ ...emptyValues(escopoDefault), ...(prefill ?? {}) });
     }
-  }, [open, transaction, escopoDefault, reset]);
+  }, [open, transaction, escopoDefault, prefill, reset]);
 
   const categoriasFiltradas = categories.filter((c) => c.tipo === tipoSelecionado);
 
@@ -300,9 +332,11 @@ function TransactionFormDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Editar transação" : "Nova transação"}</DialogTitle>
+            <DialogTitle className="text-lg">
+              {isEdit ? "Editar transação" : "Nova transação"}
+            </DialogTitle>
             <DialogDescription>
               {isEdit
                 ? "Atualize os dados do lançamento."
@@ -310,16 +344,21 @@ function TransactionFormDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="descricao">Descrição</Label>
-              <Input id="descricao" placeholder="Ex: Supermercado" {...register("descricao")} />
+              <Input
+                id="descricao"
+                placeholder="Ex: Supermercado"
+                className="h-9 rounded-full px-3.5"
+                {...register("descricao")}
+              />
               {errors.descricao && (
                 <p className="text-xs text-destructive">{errors.descricao.message}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="valor">Valor</Label>
                 <Input
@@ -327,6 +366,7 @@ function TransactionFormDialog({
                   type="number"
                   step="0.01"
                   placeholder="Ex: 150,00"
+                  className="h-9 rounded-full px-3.5"
                   {...register("valor", { valueAsNumber: true })}
                 />
                 {errors.valor && (
@@ -346,7 +386,7 @@ function TransactionFormDialog({
                         setValue("categoryId", null);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                         <SelectValue placeholder="Tipo" />
                       </SelectTrigger>
                       <SelectContent>
@@ -359,10 +399,15 @@ function TransactionFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="data">Data</Label>
-                <Input id="data" type="date" {...register("data")} />
+                <Input
+                  id="data"
+                  type="date"
+                  className="h-9 rounded-full px-3.5"
+                  {...register("data")}
+                />
                 {errors.data && (
                   <p className="text-xs text-destructive">{errors.data.message}</p>
                 )}
@@ -374,7 +419,7 @@ function TransactionFormDialog({
                   name="escopo"
                   render={({ field }) => (
                     <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
@@ -406,7 +451,7 @@ function TransactionFormDialog({
                       field.onChange(v === NONE ? null : v);
                     }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Nenhuma" />
                     </SelectTrigger>
                     <SelectContent>
@@ -423,7 +468,7 @@ function TransactionFormDialog({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label>Conta (opcional)</Label>
                 <Controller
@@ -434,7 +479,7 @@ function TransactionFormDialog({
                       value={field.value ?? NONE}
                       onValueChange={(v) => field.onChange(v === NONE ? null : v)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                         <SelectValue placeholder="Nenhuma" />
                       </SelectTrigger>
                       <SelectContent>
@@ -459,7 +504,7 @@ function TransactionFormDialog({
                       value={field.value ?? NONE}
                       onValueChange={(v) => field.onChange(v === NONE ? null : v)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                         <SelectValue placeholder="Nenhum" />
                       </SelectTrigger>
                       <SelectContent>
@@ -482,11 +527,12 @@ function TransactionFormDialog({
                 id="observacao"
                 rows={2}
                 placeholder="Ex: Compra parcelada em 3x no cartão Nubank"
+                className="rounded-2xl px-3.5 py-2.5"
                 {...register("observacao")}
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+            <div className="flex items-center justify-between rounded-2xl bg-secondary px-4 py-3">
               <Label htmlFor="efetivado" className="cursor-pointer">
                 Já efetivado
               </Label>
@@ -513,14 +559,21 @@ function TransactionFormDialog({
               </Link>
             )}
 
-            <DialogFooter className="mt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="rounded-full px-4"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancelar
               </Button>
               <Button
                 type="submit"
+                size="lg"
                 disabled={isSubmitting}
-                className="bg-gradient-accent text-white hover:opacity-90"
+                className="rounded-full px-4 font-semibold"
               >
                 {isSubmitting ? "Salvando…" : isEdit ? "Salvar" : "Criar transação"}
               </Button>
@@ -684,17 +737,17 @@ function TransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Transferência entre contas</DialogTitle>
+          <DialogTitle className="text-lg">Transferência entre contas</DialogTitle>
           <DialogDescription>
             Move dinheiro de uma conta sua pra outra — não conta como entrada nem saída real
             nos relatórios.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="transfer-valor">Valor</Label>
               <Input
@@ -702,6 +755,7 @@ function TransferDialog({
                 type="number"
                 step="0.01"
                 placeholder="Ex: 500,00"
+                className="h-9 rounded-full px-3.5"
                 value={values.valor}
                 onChange={(e) => setValues((v) => ({ ...v, valor: e.target.value }))}
               />
@@ -711,20 +765,21 @@ function TransferDialog({
               <Input
                 id="transfer-data"
                 type="date"
+                className="h-9 rounded-full px-3.5"
                 value={values.data}
                 onChange={(e) => setValues((v) => ({ ...v, data: e.target.value }))}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>De (origem)</Label>
               <Select
                 value={values.contaOrigemId}
                 onValueChange={(v) => setValues((s) => ({ ...s, contaOrigemId: v ?? "" }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                   <SelectValue placeholder="Conta de origem" />
                 </SelectTrigger>
                 <SelectContent>
@@ -742,7 +797,7 @@ function TransferDialog({
                 value={values.contaDestinoId}
                 onValueChange={(v) => setValues((s) => ({ ...s, contaDestinoId: v ?? "" }))}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                   <SelectValue placeholder="Conta de destino" />
                 </SelectTrigger>
                 <SelectContent>
@@ -762,6 +817,7 @@ function TransferDialog({
               id="transfer-observacao"
               rows={2}
               placeholder="Ex: Reserva de emergência pro Nubank"
+              className="rounded-2xl px-3.5 py-2.5"
               value={values.observacao}
               onChange={(e) => setValues((v) => ({ ...v, observacao: e.target.value }))}
             />
@@ -769,14 +825,21 @@ function TransferDialog({
 
           {formError && <p className="text-xs text-destructive">{formError}</p>}
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={submitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {submitting ? "Transferindo…" : "Transferir"}
             </Button>
@@ -792,9 +855,13 @@ export default function TransacoesPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [transferOpen, setTransferOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Transaction | null>(null);
+  const [prefill, setPrefill] = React.useState<Partial<FormValues> | null>(null);
+  const [frase, setFrase] = React.useState("");
 
   const [filters, setFilters] = React.useState({
+    busca: "",
     from: "",
+    to: "",
     tipo: "TODOS" as "TODOS" | TipoLancamento,
     categoryId: NONE,
     accountId: NONE,
@@ -805,6 +872,7 @@ export default function TransacoesPage() {
     const params = new URLSearchParams();
     if (escopo !== "ALL") params.set("escopo", escopo);
     if (filters.from) params.set("from", filters.from);
+    if (filters.to) params.set("to", filters.to);
     if (filters.tipo !== "TODOS") params.set("tipo", filters.tipo);
     if (filters.categoryId !== NONE) params.set("categoryId", filters.categoryId);
     if (filters.accountId !== NONE) params.set("accountId", filters.accountId);
@@ -823,7 +891,33 @@ export default function TransacoesPage() {
   const { data: accounts } = useFetch<Account[]>(`/api/accounts${accountsQuery}`);
   const { data: cards } = useFetch<CardEntity[]>(`/api/cards${accountsQuery}`);
 
-  const list = React.useMemo(() => transactions ?? [], [transactions]);
+  /*
+    Busca geral, aplicada no cliente sobre o resultado já filtrado pela API:
+    varre descrição, categoria, conta, cartão, observação e a data (tanto no
+    formato dd/mm/aaaa quanto aaaa-mm-dd), então dá pra procurar tanto por
+    "mercado" quanto por "05/08".
+  */
+  const list = React.useMemo(() => {
+    const todas = transactions ?? [];
+    const termo = filters.busca.trim().toLowerCase();
+    if (!termo) return todas;
+
+    return todas.filter((t) => {
+      const iso = t.data.slice(0, 10);
+      const campos = [
+        t.descricao,
+        t.category?.nome,
+        t.account?.nome,
+        t.card?.nome,
+        t.observacao,
+        iso,
+        formatDateBR(iso),
+        formatCurrency(t.valor),
+      ];
+      return campos.some((campo) => campo?.toLowerCase().includes(termo));
+    });
+  }, [transactions, filters.busca]);
+
   const totals = React.useMemo(() => {
     const entradas = list
       .filter((t) => t.tipo === "ENTRADA")
@@ -835,11 +929,120 @@ export default function TransacoesPage() {
   }, [list]);
 
   const hasActiveFilters =
+    filters.busca ||
     filters.from ||
+    filters.to ||
     filters.tipo !== "TODOS" ||
     filters.categoryId !== NONE ||
     filters.accountId !== NONE ||
     filters.cardId !== NONE;
+
+  /*
+    Lançamento por frase: interpreta e ABRE O FORMULÁRIO preenchido, nunca
+    salva direto — errar o valor ou a conta sem o usuário ver seria pior que
+    digitar tudo à mão.
+  */
+  const interpretarFrase = (e: React.FormEvent) => {
+    e.preventDefault();
+    const texto = frase.trim();
+    if (!texto) return;
+
+    const resultado = parseLancamento(texto, {
+      contas: (accounts ?? []).map((a) => ({ id: a.id, nome: a.nome })),
+      cartoes: (cards ?? []).map((c) => ({ id: c.id, nome: c.nome })),
+      categorias: (categories ?? []).map((c) => ({
+        id: c.id,
+        nome: c.nome,
+        tipo: c.tipo,
+      })),
+    });
+
+    if (resultado.valor === null) {
+      toast.error("Não encontrei um valor na frase.", {
+        description: "Tente algo como “gastei 25 na padaria hoje”.",
+      });
+      return;
+    }
+
+    setEditing(null);
+    setPrefill({
+      descricao: resultado.descricao,
+      valor: resultado.valor,
+      tipo: resultado.tipo,
+      data: resultado.data,
+      categoryId: resultado.categoryId,
+      accountId: resultado.accountId,
+      cardId: resultado.cardId,
+    });
+    setDialogOpen(true);
+    setFrase("");
+
+    toast.success("Confira os campos antes de salvar.", {
+      description: resultado.entendido.join(" · "),
+    });
+  };
+
+  const limparFiltros = () =>
+    setFilters({
+      busca: "",
+      from: "",
+      to: "",
+      tipo: "TODOS",
+      categoryId: NONE,
+      accountId: NONE,
+      cardId: NONE,
+    });
+
+  /*
+    Chips removíveis dos filtros ativos. O filtro de Tipo fica de fora porque
+    já aparece destacado nas pílulas Todos/Entradas/Saídas logo acima.
+  */
+  const filterChips: { key: string; label: string; onClear: () => void }[] = [];
+  if (filters.busca) {
+    filterChips.push({
+      key: "busca",
+      label: `“${filters.busca}”`,
+      onClear: () => setFilters((f) => ({ ...f, busca: "" })),
+    });
+  }
+  if (filters.from) {
+    filterChips.push({
+      key: "from",
+      label: `Desde ${formatDateBR(filters.from)}`,
+      onClear: () => setFilters((f) => ({ ...f, from: "" })),
+    });
+  }
+  if (filters.to) {
+    filterChips.push({
+      key: "to",
+      label: `Até ${formatDateBR(filters.to)}`,
+      onClear: () => setFilters((f) => ({ ...f, to: "" })),
+    });
+  }
+  const categoriaFiltro = (categories ?? []).find((c) => c.id === filters.categoryId);
+  if (categoriaFiltro) {
+    filterChips.push({
+      key: "categoria",
+      label: categoriaFiltro.nome,
+      onClear: () => setFilters((f) => ({ ...f, categoryId: NONE })),
+    });
+  }
+  const contaFiltro = (accounts ?? []).find((a) => a.id === filters.accountId);
+  if (contaFiltro) {
+    filterChips.push({
+      key: "conta",
+      label: contaFiltro.nome,
+      onClear: () => setFilters((f) => ({ ...f, accountId: NONE })),
+    });
+  }
+  const cartaoFiltro = (cards ?? []).find((c) => c.id === filters.cardId);
+  if (cartaoFiltro) {
+    filterChips.push({
+      key: "cartao",
+      label: cartaoFiltro.nome,
+      onClear: () => setFilters((f) => ({ ...f, cardId: NONE })),
+    });
+  }
 
   const handleDelete = async (t: Transaction) => {
     try {
@@ -856,29 +1059,32 @@ export default function TransacoesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             Transações
           </h2>
           <p className="text-sm text-muted-foreground">
-            Entradas e saídas registradas.
+            Tudo que entrou e saiu, em um lugar só.
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             variant="outline"
-            className="w-full sm:w-auto"
+            size="lg"
+            className="w-full rounded-full px-4 sm:w-auto"
             onClick={() => setTransferOpen(true)}
           >
             <ArrowRightLeft className="size-4" />
             Transferência
           </Button>
           <Button
-            className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+            size="lg"
+            className="w-full rounded-full px-4 font-semibold sm:w-auto"
             onClick={() => {
               setEditing(null);
+              setPrefill(null);
               setDialogOpen(true);
             }}
           >
@@ -888,42 +1094,115 @@ export default function TransacoesPage() {
         </div>
       </div>
 
-      {/* Filtros */}
-      <Card className="gap-3 px-5 py-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:gap-4">
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">A partir de</Label>
+      {/* Lançamento por frase */}
+      <Card className="gap-2 border-primary/25 bg-primary/5 px-4 py-4 md:px-5">
+        <form onSubmit={interpretarFrase} className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <Sparkles
+              className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-primary"
+              aria-hidden
+            />
             <Input
+              value={frase}
+              onChange={(e) => setFrase(e.target.value)}
+              placeholder="Ex: gastei 25 na padaria hoje no cartão Nubank"
+              aria-label="Descrever o lançamento em uma frase"
+              className="h-11 rounded-full border-transparent bg-card pl-11"
+            />
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            disabled={!frase.trim()}
+            className="rounded-full px-5 font-semibold"
+          >
+            Interpretar
+          </Button>
+        </form>
+        <p className="text-xs text-muted-foreground">
+          Escreva o lançamento do seu jeito — o formulário abre preenchido para você
+          conferir antes de salvar.
+        </p>
+      </Card>
+
+      {/* Filtros */}
+      <Card className="gap-4 px-4 py-4 md:px-5">
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            value={filters.busca}
+            onChange={(e) => setFilters((f) => ({ ...f, busca: e.target.value }))}
+            placeholder="Buscar por descrição, categoria, conta, valor ou data…"
+            aria-label="Buscar nas transações"
+            className="h-11 rounded-full pl-11"
+          />
+        </div>
+
+        {/* Tipo vira pílula: são só três opções, e assim fica num toque só. */}
+        <div
+          role="group"
+          aria-label="Filtrar por tipo"
+          className="inline-flex w-fit rounded-full bg-secondary p-1"
+        >
+          {TIPO_FILTROS.map((opt) => {
+            const ativo = filters.tipo === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={ativo}
+                onClick={() => setFilters((f) => ({ ...f, tipo: opt.value }))}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                  ativo
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="filtro-de" className="text-xs text-muted-foreground">
+              A partir de
+            </Label>
+            <Input
+              id="filtro-de"
               type="date"
+              max={filters.to || undefined}
+              className="h-9 rounded-full border-transparent bg-secondary px-3.5"
               value={filters.from}
               onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs text-muted-foreground">Tipo</Label>
-            <Select
-              value={filters.tipo}
-              onValueChange={(v) =>
-                setFilters((f) => ({ ...f, tipo: v as typeof f.tipo }))
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
-                <SelectItem value="ENTRADA">Entrada</SelectItem>
-                <SelectItem value="SAIDA">Saída</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="filtro-ate" className="text-xs text-muted-foreground">
+              Até
+            </Label>
+            <Input
+              id="filtro-ate"
+              type="date"
+              min={filters.from || undefined}
+              className="h-9 rounded-full border-transparent bg-secondary px-3.5"
+              value={filters.to}
+              onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
+            />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Categoria</Label>
             <Select
               value={filters.categoryId}
               onValueChange={(v) => setFilters((f) => ({ ...f, categoryId: v ?? NONE }))}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full rounded-full border-transparent bg-secondary px-3.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -936,13 +1215,13 @@ export default function TransacoesPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Conta</Label>
             <Select
               value={filters.accountId}
               onValueChange={(v) => setFilters((f) => ({ ...f, accountId: v ?? NONE }))}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full rounded-full border-transparent bg-secondary px-3.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -955,13 +1234,13 @@ export default function TransacoesPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Cartão</Label>
             <Select
               value={filters.cardId}
               onValueChange={(v) => setFilters((f) => ({ ...f, cardId: v ?? NONE }))}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="h-9 w-full rounded-full border-transparent bg-secondary px-3.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -975,46 +1254,77 @@ export default function TransacoesPage() {
             </Select>
           </div>
         </div>
+
         {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-fit"
-            onClick={() =>
-              setFilters({
-                from: "",
-                tipo: "TODOS",
-                categoryId: NONE,
-                accountId: NONE,
-                cardId: NONE,
-              })
-            }
-          >
-            <X className="size-3.5" />
-            Limpar filtros
-          </Button>
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+            {filterChips.map((chip) => (
+              <span
+                key={chip.key}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-1 pr-1 pl-3 text-xs font-medium text-foreground"
+              >
+                {chip.label}
+                <button
+                  type="button"
+                  aria-label={`Remover filtro ${chip.label}`}
+                  onClick={chip.onClear}
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full"
+              onClick={limparFiltros}
+            >
+              Limpar tudo
+            </Button>
+          </div>
         )}
       </Card>
 
       {!loading && !error && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">Entradas (filtro)</p>
-            <p className="font-numeric text-xl font-semibold text-income">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-5">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <ArrowDownLeft className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Entradas no filtro
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-income">
               +{formatCurrency(totals.entradas)}
             </p>
           </Card>
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">Saídas (filtro)</p>
-            <p className="font-numeric text-xl font-semibold text-expense">
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <ArrowUpRight className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Saídas no filtro
+              </p>
+            </div>
+            <p className="font-numeric text-2xl font-semibold text-expense">
               -{formatCurrency(totals.saidas)}
             </p>
           </Card>
-          <Card className="gap-1 px-5 py-4">
-            <p className="text-xs text-muted-foreground">Saldo (filtro)</p>
+          <Card className="gap-3 px-5 py-5">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <Wallet className="size-4" />
+              </span>
+              <p className="text-xs font-medium text-muted-foreground">
+                Saldo no filtro
+              </p>
+            </div>
             <p
               className={cn(
-                "font-numeric text-xl font-semibold",
+                "font-numeric text-2xl font-semibold",
                 totals.saldo >= 0 ? "text-income" : "text-expense"
               )}
             >
@@ -1033,112 +1343,275 @@ export default function TransacoesPage() {
       )}
 
       {!loading && !error && list.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <ArrowLeftRight className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            {hasActiveFilters
-              ? "Nenhuma transação encontrada para os filtros aplicados."
-              : "Nenhuma transação registrada ainda."}
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setEditing(null);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="size-4" />
-            Registrar primeira transação
-          </Button>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <ArrowLeftRight className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              {hasActiveFilters ? "Nada com esses filtros" : "Nenhuma transação ainda"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {hasActiveFilters
+                ? "Ajuste ou limpe os filtros pra ver seus lançamentos."
+                : "Registre a primeira entrada ou saída pra começar."}
+            </p>
+          </div>
+          {hasActiveFilters ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={limparFiltros}
+            >
+              <X className="size-4" />
+              Limpar filtros
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="rounded-full px-4 font-semibold"
+              onClick={() => {
+                setEditing(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="size-4" />
+              Registrar primeira transação
+            </Button>
+          )}
         </Card>
       )}
 
       {!loading && !error && list.length > 0 && (
-        <Card className="px-0 py-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Conta/Cartão</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {list.map((t) => (
-                <TableRow key={t.id}>
-                  <TableCell>{formatDateBR(t.data.slice(0, 10))}</TableCell>
-                  <TableCell className="font-medium">{t.descricao}</TableCell>
-                  <TableCell>
-                    {t.category ? (
-                      <Badge variant="outline">{t.category.nome}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {t.account?.nome ?? t.card?.nome ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={t.efetivado ? "secondary" : "outline"}>
-                      {t.efetivado ? "Efetivado" : "Pendente"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "text-right font-numeric font-medium",
-                      t.tipo === "ENTRADA" ? "text-income" : "text-expense"
-                    )}
-                  >
-                    {t.tipo === "ENTRADA" ? "+" : "-"}
-                    {formatCurrency(t.valor)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button variant="ghost" size="icon-sm" render={<Link href={`/documentos?transactionId=${t.id}`} />} title="Ver documentos">
-                        <FileText className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`Editar ${t.descricao}`}
-                        onClick={() => {
-                          setEditing(t);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <ConfirmDeleteDialog
-                        trigger={
-                          <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${t.descricao}`}>
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        }
-                        title="Excluir transação?"
-                        description={`"${t.descricao}" será excluída permanentemente.`}
-                        onConfirm={() => handleDelete(t)}
-                      />
+        <>
+          {/*
+            Mobile: lista de cards (ícone circular + descrição + valor à
+            direita). Tabela em tela pequena obriga rolagem horizontal, então
+            ela só aparece a partir de `md`.
+          */}
+          <ul className="flex flex-col gap-2.5 md:hidden">
+            {list.map((t) => {
+              const entrada = t.tipo === "ENTRADA";
+              const subtitulo = [
+                t.category?.nome,
+                t.account?.nome ?? t.card?.nome,
+                formatDateBR(t.data.slice(0, 10)),
+              ]
+                .filter(Boolean)
+                .join(" • ");
+
+              return (
+                <li
+                  key={t.id}
+                  className="flex flex-col gap-2 rounded-2xl bg-card px-4 py-3.5 ring-1 ring-foreground/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-full",
+                        entrada
+                          ? "bg-income/10 text-income"
+                          : "bg-primary/10 text-expense"
+                      )}
+                    >
+                      {entrada ? (
+                        <ArrowDownLeft className="size-4.5" />
+                      ) : (
+                        <ArrowUpRight className="size-4.5" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{t.descricao}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {subtitulo}
+                      </p>
                     </div>
-                  </TableCell>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span
+                        className={cn(
+                          "font-numeric text-sm font-semibold",
+                          entrada ? "text-income" : "text-expense"
+                        )}
+                      >
+                        {entrada ? "+" : "-"}
+                        {formatCurrency(t.valor)}
+                      </span>
+                      {!t.efetivado && (
+                        <span className="text-[0.65rem] font-medium text-muted-foreground">
+                          Pendente
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-full text-muted-foreground"
+                      render={<Link href={`/documentos?transactionId=${t.id}`} />}
+                      aria-label={`Ver documentos de ${t.descricao}`}
+                    >
+                      <FileText className="size-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-full text-muted-foreground"
+                      aria-label={`Editar ${t.descricao}`}
+                      onClick={() => {
+                        setEditing(t);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <ConfirmDeleteDialog
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-full text-muted-foreground"
+                          aria-label={`Excluir ${t.descricao}`}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      }
+                      title="Excluir transação?"
+                      description={`"${t.descricao}" será excluída permanentemente.`}
+                      onConfirm={() => handleDelete(t)}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: tabela */}
+          <Card className="hidden px-0 py-0 md:flex">
+            <Table>
+              <TableHeader className="[&_tr]:border-border/60">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Data
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Descrição
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Categoria
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Conta/Cartão
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-medium text-muted-foreground">
+                    Status
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Valor
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-right text-xs font-medium text-muted-foreground">
+                    Ações
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHeader>
+              <TableBody>
+                {list.map((t) => (
+                  <TableRow key={t.id} className="border-border/60">
+                    <TableCell className="px-5 py-3.5 text-muted-foreground">
+                      {formatDateBR(t.data.slice(0, 10))}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 font-medium">
+                      {t.descricao}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      {t.category ? (
+                        <Badge variant="secondary">{t.category.nome}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-muted-foreground">
+                      {t.account?.nome ?? t.card?.nome ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5">
+                      <Badge variant={t.efetivado ? "secondary" : "outline"}>
+                        {t.efetivado ? "Efetivado" : "Pendente"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-5 py-3.5 text-right font-numeric font-semibold",
+                        t.tipo === "ENTRADA" ? "text-income" : "text-expense"
+                      )}
+                    >
+                      {t.tipo === "ENTRADA" ? "+" : "-"}
+                      {formatCurrency(t.valor)}
+                    </TableCell>
+                    <TableCell className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-full text-muted-foreground"
+                          render={<Link href={`/documentos?transactionId=${t.id}`} />}
+                          aria-label={`Ver documentos de ${t.descricao}`}
+                          title="Ver documentos"
+                        >
+                          <FileText className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-full text-muted-foreground"
+                          aria-label={`Editar ${t.descricao}`}
+                          onClick={() => {
+                            setEditing(t);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <ConfirmDeleteDialog
+                          trigger={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="rounded-full text-muted-foreground"
+                              aria-label={`Excluir ${t.descricao}`}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          }
+                          title="Excluir transação?"
+                          description={`"${t.descricao}" será excluída permanentemente.`}
+                          onConfirm={() => handleDelete(t)}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
       )}
 
       <TransactionFormDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(aberto) => {
+          setDialogOpen(aberto);
+          // O preenchimento vale só para a abertura atual: reabrir pelo botão
+          // "Nova transação" tem que vir com o formulário limpo.
+          if (!aberto) setPrefill(null);
+        }}
         transaction={editing}
         categories={categories ?? []}
         accounts={accounts ?? []}
         cards={cards ?? []}
         escopoDefault={escopo !== "ALL" ? escopo : null}
+        prefill={prefill}
         onSaved={refetch}
         onCategoryCreated={refetchCategories}
       />

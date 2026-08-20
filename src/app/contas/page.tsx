@@ -161,9 +161,11 @@ function AccountFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar conta" : "Nova conta"}</DialogTitle>
+          <DialogTitle className="text-lg">
+            {isEdit ? "Editar conta" : "Nova conta"}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Atualize os dados da conta."
@@ -173,11 +175,16 @@ function AccountFormDialog({
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-3"
+          className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" placeholder="Ex: Nubank" {...register("nome")} />
+            <Input
+              id="nome"
+              placeholder="Ex: Nubank"
+              className="h-9 rounded-full px-3.5"
+              {...register("nome")}
+            />
             {errors.nome && (
               <p className="text-xs text-destructive">{errors.nome.message}</p>
             )}
@@ -188,6 +195,7 @@ function AccountFormDialog({
             <Input
               id="instituicao"
               placeholder="Ex: Nu Pagamentos"
+              className="h-9 rounded-full px-3.5"
               {...register("instituicao")}
             />
             {errors.instituicao && (
@@ -197,7 +205,7 @@ function AccountFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Tipo</Label>
               <Controller
@@ -208,7 +216,7 @@ function AccountFormDialog({
                     value={field.value ?? "CORRENTE"}
                     onValueChange={field.onChange}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -230,7 +238,7 @@ function AccountFormDialog({
                 name="escopo"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -248,13 +256,15 @@ function AccountFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="saldoInicial">Saldo inicial</Label>
               <Input
                 id="saldoInicial"
                 type="number"
                 step="0.01"
+                placeholder="Ex: 1200,00"
+                className="h-9 rounded-full px-3.5"
                 {...register("saldoInicial", { valueAsNumber: true })}
               />
               {errors.saldoInicial && (
@@ -293,7 +303,7 @@ function AccountFormDialog({
           </div>
 
           {isEdit && (
-            <div className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
+            <div className="flex items-center justify-between rounded-2xl bg-secondary px-4 py-3">
               <Label htmlFor="arquivada" className="cursor-pointer">
                 Conta arquivada
               </Label>
@@ -311,18 +321,21 @@ function AccountFormDialog({
             </div>
           )}
 
-          <DialogFooter className="mt-2">
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
             <Button
               type="button"
               variant="outline"
+              size="lg"
+              className="rounded-full px-4"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={isSubmitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {isSubmitting ? "Salvando…" : isEdit ? "Salvar" : "Criar conta"}
             </Button>
@@ -367,18 +380,18 @@ export default function ContasPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             Contas
           </h2>
           <p className="text-sm text-muted-foreground">
-            Contas correntes, poupança, investimento e carteiras.
+            Onde seu dinheiro fica parado: corrente, poupança, investimento e carteira.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <label className="flex w-fit cursor-pointer items-center gap-2 rounded-full bg-secondary px-3.5 py-2 text-xs font-medium text-muted-foreground">
             <Switch
               size="sm"
               checked={showArchived}
@@ -387,7 +400,8 @@ export default function ContasPage() {
             Mostrar arquivadas
           </label>
           <Button
-            className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+            size="lg"
+            className="w-full rounded-full px-4 font-semibold sm:w-auto"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -414,13 +428,21 @@ export default function ContasPage() {
       )}
 
       {!loading && !error && visible.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <Wallet className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Nenhuma conta cadastrada ainda.
-          </p>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <Wallet className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              Nenhuma conta cadastrada
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Cadastre sua primeira conta pra vincular transações a ela.
+            </p>
+          </div>
           <Button
-            variant="outline"
+            size="lg"
+            className="rounded-full px-4 font-semibold"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
@@ -433,42 +455,40 @@ export default function ContasPage() {
       )}
 
       {!loading && !error && visible.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 md:gap-5">
           {visible.map((account) => (
             <Card
               key={account.id}
               className={cn(
-                "gap-3 px-5 py-5",
+                "gap-4 px-5 py-5",
                 account.arquivada && "opacity-60"
               )}
-              style={{
-                borderTop: `3px solid ${account.cor}`,
-              }}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-3">
                   <div
-                    className="flex size-9 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${account.cor}26` }}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${account.cor}1f` }}
                   >
                     <Landmark
                       className="size-4.5"
                       style={{ color: account.cor }}
                     />
                   </div>
-                  <div>
-                    <p className="font-heading text-sm font-semibold">
+                  <div className="min-w-0">
+                    <p className="truncate font-heading text-sm font-semibold">
                       {account.nome}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       {account.instituicao}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button
                     variant="ghost"
                     size="icon-sm"
+                    className="rounded-full text-muted-foreground"
                     aria-label={`Editar ${account.nome}`}
                     onClick={() => {
                       setEditing(account);
@@ -479,7 +499,12 @@ export default function ContasPage() {
                   </Button>
                   <ConfirmDeleteDialog
                     trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${account.nome}`}>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-full text-muted-foreground"
+                        aria-label={`Excluir ${account.nome}`}
+                      >
                         <Trash2 className="size-3.5" />
                       </Button>
                     }
@@ -490,26 +515,30 @@ export default function ContasPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">{TIPO_LABELS[account.tipo]}</Badge>
-                <Badge variant={account.escopo === "PF" ? "secondary" : "outline"}>
-                  {account.escopo}
-                </Badge>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">Saldo inicial</p>
+                <p className="font-numeric text-2xl font-semibold">
+                  {formatCurrency(account.saldoInicial)}
+                </p>
               </div>
 
-              <p className="font-numeric text-xl font-semibold">
-                {formatCurrency(account.saldoInicial)}
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                  saldo inicial
-                </span>
-              </p>
-
-              {account.arquivada && (
-                <Badge variant="secondary" className="w-fit gap-1">
-                  <Archive className="size-3" />
-                  Arquivada
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="secondary" className="gap-1.5">
+                  <span
+                    aria-hidden
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: account.cor }}
+                  />
+                  {TIPO_LABELS[account.tipo]}
                 </Badge>
-              )}
+                <Badge variant="outline">{account.escopo}</Badge>
+                {account.arquivada && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Archive className="size-3" />
+                    Arquivada
+                  </Badge>
+                )}
+              </div>
             </Card>
           ))}
         </div>

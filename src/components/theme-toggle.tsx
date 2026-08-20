@@ -40,8 +40,8 @@ export function ThemeToggle() {
     return (
       <Button
         variant="ghost"
-        size="icon"
-        className="text-muted-foreground"
+        size="icon-lg"
+        className="rounded-full text-muted-foreground"
         disabled
         aria-hidden
       >
@@ -56,10 +56,12 @@ export function ThemeToggle() {
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size="icon-lg"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Alternar para tema claro" : "Alternar para tema escuro"}
-      className="relative overflow-hidden text-muted-foreground hover:text-foreground"
+      aria-label={
+        isDark ? "Alternar para tema claro" : "Alternar para tema escuro"
+      }
+      className="relative overflow-hidden rounded-full bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

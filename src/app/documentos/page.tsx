@@ -13,6 +13,7 @@ import { documentUploadSchema } from "@/lib/validations";
 import type { Document as DocumentEntity, TipoDocumento } from "@/lib/types";
 import { useEscopoStore } from "@/lib/store";
 import { useFetch } from "@/hooks/use-fetch";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -165,13 +166,13 @@ function UploadForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Novo documento</DialogTitle>
+        <DialogTitle className="text-lg">Novo documento</DialogTitle>
         <DialogDescription>
           Envie uma nota fiscal ou comprovante (pdf, jpg, png ou webp, até 15MB).
         </DialogDescription>
       </DialogHeader>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="file">Arquivo</Label>
             <Input
@@ -179,6 +180,7 @@ function UploadForm({
               ref={fileInputRef}
               type="file"
               accept=".pdf,.jpg,.jpeg,.png,.webp"
+              className="h-auto rounded-2xl px-3.5 py-2.5"
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
                 setFile(f);
@@ -193,7 +195,7 @@ function UploadForm({
             {fileError && <p className="text-xs text-destructive">{fileError}</p>}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label>Tipo</Label>
               <Controller
@@ -201,7 +203,7 @@ function UploadForm({
                 name="tipo"
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -222,7 +224,7 @@ function UploadForm({
                 name="escopo"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="h-9 w-full rounded-full px-3.5">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -240,7 +242,12 @@ function UploadForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="competencia">Competência (mês)</Label>
-            <Input id="competencia" type="month" {...register("competencia")} />
+            <Input
+              id="competencia"
+              type="month"
+              className="h-9 rounded-full px-3.5"
+              {...register("competencia")}
+            />
             {errors.competencia && (
               <p className="text-xs text-destructive">{errors.competencia.message}</p>
             )}
@@ -248,23 +255,36 @@ function UploadForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="observacao">Observação (opcional)</Label>
-            <Textarea id="observacao" rows={2} {...register("observacao")} />
+            <Textarea
+              id="observacao"
+              rows={2}
+              placeholder="Ex: Nota fiscal do notebook novo"
+              className="rounded-2xl px-3.5 py-2.5"
+              {...register("observacao")}
+            />
           </div>
 
           {transactionId && (
-            <p className="rounded-lg border border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <p className="rounded-2xl bg-secondary px-4 py-3 text-xs text-muted-foreground">
               Este documento será vinculado à transação selecionada.
             </p>
           )}
 
-          <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="mx-0 mt-1 mb-0 rounded-none border-t-0 bg-transparent p-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full px-4"
+              onClick={() => onOpenChange(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={isSubmitting}
-              className="bg-gradient-accent text-white hover:opacity-90"
+              className="rounded-full px-4 font-semibold"
             >
               {isSubmitting ? "Enviando…" : "Enviar documento"}
             </Button>
@@ -289,7 +309,7 @@ function UploadDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="gap-5 rounded-3xl p-5 sm:max-w-md">
         {open && (
           <UploadForm
             key={transactionId ?? "none"}
@@ -355,10 +375,10 @@ function DocumentosContent() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight">
+    <div className="flex flex-col gap-4 md:gap-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
             Documentos
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -366,7 +386,8 @@ function DocumentosContent() {
           </p>
         </div>
         <Button
-          className="w-full bg-gradient-accent text-white hover:opacity-90 sm:w-auto"
+          size="lg"
+          className="w-full rounded-full px-4 font-semibold sm:w-auto"
           onClick={() => setDialogOpen(true)}
         >
           <Plus className="size-4" />
@@ -374,59 +395,89 @@ function DocumentosContent() {
         </Button>
       </div>
 
-      {transactionIdParam && (
-        <Card className="flex-row items-center justify-between gap-3 px-4 py-3">
-          <p className="text-sm text-muted-foreground">
-            Mostrando documentos vinculados a uma transação específica.
-          </p>
-          <Button variant="ghost" size="sm" onClick={clearTransactionFilter}>
-            <X className="size-3.5" />
-            Limpar filtro
-          </Button>
-        </Card>
-      )}
+      <Card className="gap-4 px-4 py-4 md:px-5">
+        {/* Tipo em pílulas: são poucas opções e cabem numa linha. */}
+        <div
+          role="group"
+          aria-label="Filtrar por tipo de documento"
+          className="flex flex-wrap items-center gap-1 rounded-3xl bg-secondary p-1 sm:w-fit sm:rounded-full"
+        >
+          {[
+            { value: NONE as string, label: "Todos" },
+            ...Object.entries(TIPO_LABELS).map(([value, label]) => ({ value, label })),
+          ].map((opt) => {
+            const ativo = tipoFilter === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                aria-pressed={ativo}
+                onClick={() => setTipoFilter(opt.value as TipoDocumento | typeof NONE)}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                  ativo
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
 
-      <Card className="flex-row flex-wrap items-end gap-3 px-5 py-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5 sm:w-48">
           <Label className="text-xs text-muted-foreground">Competência</Label>
           <Input
             type="month"
             value={competenciaFilter}
             onChange={(e) => setCompetenciaFilter(e.target.value)}
-            className="w-40"
+            className="h-9 rounded-full border-transparent bg-secondary px-3.5"
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Tipo</Label>
-          <Select
-            value={tipoFilter}
-            onValueChange={(v) => setTipoFilter((v as TipoDocumento) ?? NONE)}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NONE}>Todos</SelectItem>
-              {Object.entries(TIPO_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {(competenciaFilter || tipoFilter !== NONE) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setCompetenciaFilter("");
-              setTipoFilter(NONE);
-            }}
-          >
-            <X className="size-3.5" />
-            Limpar
-          </Button>
+
+        {(competenciaFilter || tipoFilter !== NONE || transactionIdParam) && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+            {competenciaFilter && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-1 pr-1 pl-3 text-xs font-medium text-foreground">
+                Competência {competenciaFilter}
+                <button
+                  type="button"
+                  aria-label="Remover filtro de competência"
+                  onClick={() => setCompetenciaFilter("")}
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            {tipoFilter !== NONE && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-1 pr-1 pl-3 text-xs font-medium text-foreground">
+                {TIPO_LABELS[tipoFilter as TipoDocumento]}
+                <button
+                  type="button"
+                  aria-label="Remover filtro de tipo"
+                  onClick={() => setTipoFilter(NONE)}
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+            {transactionIdParam && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 py-1 pr-1 pl-3 text-xs font-medium text-foreground">
+                De uma transação específica
+                <button
+                  type="button"
+                  aria-label="Remover filtro de transação"
+                  onClick={clearTransactionFilter}
+                  className="flex size-5 items-center justify-center rounded-full text-muted-foreground transition-colors outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            )}
+          </div>
         )}
       </Card>
 
@@ -445,12 +496,23 @@ function DocumentosContent() {
       )}
 
       {!loading && !error && list.length === 0 && (
-        <Card className="items-center gap-3 px-6 py-12 text-center">
-          <Paperclip className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Nenhum documento encontrado.
-          </p>
-          <Button variant="outline" onClick={() => setDialogOpen(true)}>
+        <Card className="items-center gap-4 px-6 py-14 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <Paperclip className="size-6" />
+          </span>
+          <div className="flex flex-col gap-1">
+            <p className="font-heading text-base font-semibold">
+              Nenhum documento encontrado
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Envie notas e comprovantes pra ter tudo à mão na hora do acerto.
+            </p>
+          </div>
+          <Button
+            size="lg"
+            className="rounded-full px-4 font-semibold"
+            onClick={() => setDialogOpen(true)}
+          >
             <Plus className="size-4" />
             Enviar primeiro documento
           </Button>
@@ -458,12 +520,17 @@ function DocumentosContent() {
       )}
 
       {!loading && !error && list.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 md:gap-5">
           {list.map((doc) => {
             const isImage = doc.mimeType.startsWith("image/");
             return (
               <Card key={doc.id} className="gap-0 overflow-hidden px-0 py-0">
-                <div className="flex h-32 items-center justify-center bg-muted/40">
+                <div
+                  className={cn(
+                    "flex h-32 items-center justify-center bg-secondary",
+                    !isImage && "text-muted-foreground"
+                  )}
+                >
                   {isImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -472,32 +539,29 @@ function DocumentosContent() {
                       className="size-full object-cover"
                     />
                   ) : (
-                    <div className="text-muted-foreground">
+                    <span className="flex size-12 items-center justify-center rounded-full bg-card">
                       <DocumentIcon tipo={doc.tipo} />
-                    </div>
+                    </span>
                   )}
                 </div>
                 <div className="flex flex-col gap-2 p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="outline">{TIPO_LABELS[doc.tipo]}</Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {doc.competencia}
-                    </span>
-                  </div>
                   <p
-                    className="truncate text-sm font-medium"
+                    className="truncate text-sm font-semibold"
                     title={doc.nomeArquivo}
                   >
                     {doc.nomeArquivo}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatBytes(doc.tamanho)}
+                  <p className="truncate text-xs text-muted-foreground">
+                    {doc.competencia} • {formatBytes(doc.tamanho)}
                   </p>
-                  <div className="mt-1 flex items-center gap-2">
+                  <Badge variant="secondary" className="w-fit">
+                    {TIPO_LABELS[doc.tipo]}
+                  </Badge>
+                  <div className="mt-2 flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 rounded-full"
                       render={
                         <a href={`/api/documents/${doc.id}/file`} target="_blank" rel="noreferrer" />
                       }
@@ -506,7 +570,12 @@ function DocumentosContent() {
                     </Button>
                     <ConfirmDeleteDialog
                       trigger={
-                        <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${doc.nomeArquivo}`}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="rounded-full text-muted-foreground"
+                          aria-label={`Excluir ${doc.nomeArquivo}`}
+                        >
                           <Trash2 className="size-3.5" />
                         </Button>
                       }

@@ -6,7 +6,54 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+/**
+ * Percorre a árvore de filhos juntando `value` → rótulo de cada `SelectItem`.
+ */
+function coletarItens(
+  node: React.ReactNode,
+  acc: Record<string, React.ReactNode>
+) {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+
+    if (child.type === SelectItem) {
+      const { value, children } = child.props as SelectPrimitive.Item.Props
+      if (value !== undefined && value !== null) {
+        acc[String(value)] = children
+      }
+      return
+    }
+
+    const netos = (child.props as { children?: React.ReactNode })?.children
+    if (netos) coletarItens(netos, acc)
+  })
+}
+
+/**
+ * O `Select.Value` do Base UI mostra o VALOR CRU quando a raiz não recebe
+ * `items` — o que faria a interface exibir coisas como `__none__` ou um id
+ * de banco no lugar do rótulo. Em vez de exigir que cada tela monte esse
+ * mapa à mão (fácil de esquecer, e o erro só aparece em tempo de execução),
+ * derivamos daqui mesmo, a partir dos `SelectItem` declarados.
+ */
+function Select<Value>({
+  items,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value>) {
+  const itensDerivados = React.useMemo(() => {
+    if (items) return items
+    const acc: Record<string, React.ReactNode> = {}
+    coletarItens(children, acc)
+    return Object.keys(acc).length > 0 ? acc : undefined
+  }, [items, children])
+
+  return (
+    <SelectPrimitive.Root items={itensDerivados} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

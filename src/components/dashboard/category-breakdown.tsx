@@ -1,101 +1,87 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import Link from "next/link";
 import { PieChart as PieChartIcon } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CARD_LINK } from "@/components/dashboard/tone";
 import type { DashboardCategoria } from "@/components/dashboard/types";
-
-function DonutTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: DashboardCategoria }[];
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-  const item = payload[0].payload;
-  return (
-    <div className="glass rounded-xl border border-border/50 bg-popover px-3 py-2 text-xs shadow-lg">
-      <p className="flex items-center gap-1.5 font-medium text-popover-foreground">
-        <span className="size-2 rounded-full" style={{ backgroundColor: item.cor }} />
-        {item.nome}
-      </p>
-      <p className="font-numeric mt-1 text-muted-foreground">
-        {formatCurrency(item.valor)} · {item.percentual.toString().replace(".", ",")}%
-      </p>
-    </div>
-  );
-}
 
 interface CategoryBreakdownProps {
   porCategoria: DashboardCategoria[];
+  periodoLabel: string;
+  className?: string;
 }
 
-export function CategoryBreakdown({ porCategoria }: CategoryBreakdownProps) {
+/**
+ * "Breakdown" de categorias no estilo da referência mobile: bolinha da cor da
+ * categoria + nome + valor + percentual, com uma barra de progresso fina
+ * embaixo. A lista rola dentro do card quando há muitas categorias.
+ */
+export function CategoryBreakdown({
+  porCategoria,
+  periodoLabel,
+  className,
+}: CategoryBreakdownProps) {
   const hasData = porCategoria.length > 0;
+  const total = porCategoria.reduce((acc, item) => acc + item.valor, 0);
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className={cn("flex min-h-0 flex-col", className)}>
       <CardHeader>
         <CardTitle>Gastos por categoria</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          {periodoLabel} · {formatCurrency(total)}
+        </p>
+        <CardAction>
+          <Link href="/transacoes" className={CARD_LINK}>
+            Ver tudo
+          </Link>
+        </CardAction>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-4">
+
+      <CardContent className="flex min-h-0 flex-1 flex-col">
         {!hasData ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
-            <PieChartIcon className="size-8 opacity-40" />
+            <PieChartIcon className="size-8 opacity-40" aria-hidden />
             <p className="text-sm">Nenhum gasto no período</p>
           </div>
         ) : (
-          <>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={porCategoria}
-                    dataKey="valor"
-                    nameKey="nome"
-                    innerRadius="60%"
-                    outerRadius="90%"
-                    paddingAngle={2}
-                    isAnimationActive
-                    animationDuration={500}
-                  >
-                    {porCategoria.map((entry) => (
-                      <Cell key={entry.categoryId ?? entry.nome} fill={entry.cor} stroke="transparent" />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<DonutTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <ul className="flex flex-col gap-2.5 overflow-y-auto">
-              {porCategoria.map((item) => (
-                <li
-                  key={item.categoryId ?? item.nome}
-                  className="flex items-center justify-between gap-2 text-sm"
-                >
+          <ul className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto pr-1">
+            {porCategoria.map((item) => (
+              <li key={item.categoryId ?? item.nome} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2 text-sm">
                   <span className="flex min-w-0 items-center gap-2">
                     <span
+                      aria-hidden
                       className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: item.cor }}
                     />
                     <span className="truncate text-foreground/90">{item.nome}</span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {item.percentual.toString().replace(".", ",")}%
-                    </span>
-                    <span className="font-numeric text-xs font-medium">
+                  <span className="flex shrink-0 items-baseline gap-2">
+                    <span className="font-numeric text-sm font-semibold">
                       {formatCurrency(item.valor)}
                     </span>
+                    <span className="font-numeric w-10 text-right text-xs text-muted-foreground">
+                      {item.percentual.toString().replace(".", ",")}%
+                    </span>
                   </span>
-                </li>
-              ))}
-            </ul>
-          </>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary" aria-hidden>
+                  <div
+                    className="h-full rounded-full transition-[width] duration-500 ease-out"
+                    style={{
+                      width: `${Math.max(item.percentual, 2)}%`,
+                      backgroundColor: item.cor,
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>

@@ -2,81 +2,99 @@
 
 import { TrendingDown } from "lucide-react";
 import {
-  Area,
+  Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
-  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { cn } from "@/lib/utils";
 import { formatCurrency, formatDateBR, formatWeekdayShortBR } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartTooltip } from "@/components/dashboard/chart-tooltip";
 import type { DashboardData, DashboardRange } from "@/components/dashboard/types";
-
-const INCOME_HEX = "#34d399";
-const EXPENSE_HEX = "#fb7185";
 
 function xAxisLabel(date: string, range: DashboardRange) {
   if (range === "week") return formatWeekdayShortBR(date);
   return formatDateBR(date).slice(0, 5);
 }
 
+const RANGE_SUBTITLE: Record<DashboardRange, string> = {
+  day: "Últimos 14 dias",
+  week: "Semana atual, dia a dia",
+  month: "Mês atual, dia a dia",
+};
+
 interface MainChartProps {
   data: DashboardData;
+  className?: string;
 }
 
-export function MainChart({ data }: MainChartProps) {
+/**
+ * Gráfico principal: barras arredondadas de entradas (verde) e saídas
+ * (coral), lado a lado — o desenho de barras finas da referência. O dia de
+ * maior gasto ganha uma barra em terracota (`--chart-4`) e é anunciado no
+ * badge do cabeçalho.
+ */
+export function MainChart({ data, className }: MainChartProps) {
   const { series, range, peakSpendDay } = data;
   const compactXAxis = series.length > 10;
 
   return (
-    <Card className="flex-1">
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <CardTitle>Entradas &amp; saídas</CardTitle>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-income" />
-              Entradas
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full bg-expense" />
-              Saídas
-            </span>
-          </div>
+    <Card className={cn("flex flex-col", className)}>
+      <CardHeader>
+        <CardTitle>Entradas &amp; saídas</CardTitle>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span>{RANGE_SUBTITLE[range]}</span>
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2 rounded-full bg-income" />
+            Entradas
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden className="size-2 rounded-full bg-expense" />
+            Saídas
+          </span>
         </div>
         {peakSpendDay && (
-          <div className="flex items-center gap-2 rounded-full bg-expense/10 px-3 py-1 text-xs font-medium text-expense">
-            <TrendingDown className="size-3.5" />
-            Maior gasto: {formatDateBR(peakSpendDay.date)} — {formatCurrency(peakSpendDay.valor)}
-          </div>
+          <CardAction>
+            <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-foreground">
+              <TrendingDown className="size-3.5 text-primary" aria-hidden />
+              Maior gasto: {formatDateBR(peakSpendDay.date)} —{" "}
+              <span className="font-numeric font-semibold">
+                {formatCurrency(peakSpendDay.valor)}
+              </span>
+            </span>
+          </CardAction>
         )}
       </CardHeader>
-      <CardContent className="h-72 sm:h-80 2xl:h-[26rem]">
+
+      {/*
+        `min-h-*` + `flex-1` (em vez de `h-*`): o `flex-1` faz o gráfico
+        preencher o card quando o card é esticado pela linha do grid, e o
+        `min-h` impede que ele colapse pra zero no mobile, onde nada define a
+        altura. `min-w-0` evita o clássico bug do ResponsiveContainer, que não
+        encolhe junto com a coluna do grid.
+      */}
+      <CardContent className="min-h-64 min-w-0 flex-1 sm:min-h-72 2xl:min-h-[22rem]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="fillEntradas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={INCOME_HEX} stopOpacity={0.35} />
-                <stop offset="95%" stopColor={INCOME_HEX} stopOpacity={0.02} />
-              </linearGradient>
-              <linearGradient id="fillSaidas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={EXPENSE_HEX} stopOpacity={0.35} />
-                <stop offset="95%" stopColor={EXPENSE_HEX} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <ComposedChart
+            data={series}
+            margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+            barGap={2}
+            barCategoryGap="22%"
+          >
+            <CartesianGrid strokeDasharray="4 6" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="date"
               tickFormatter={(value: string) => xAxisLabel(value, range)}
               interval={compactXAxis ? "preserveStartEnd" : 0}
               tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: "var(--border)" }}
+              axisLine={false}
               minTickGap={compactXAxis ? 24 : 8}
             />
             <YAxis
@@ -88,41 +106,33 @@ export function MainChart({ data }: MainChartProps) {
               axisLine={false}
               width={56}
             />
-            <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--border)" }} />
-            <Area
-              type="monotone"
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--secondary)", radius: 12 }} />
+            <Bar
               dataKey="entradas"
-              stroke={INCOME_HEX}
-              strokeWidth={2.5}
-              fill="url(#fillEntradas)"
-              dot={series.length <= 31 ? { r: 2.5, fill: INCOME_HEX, strokeWidth: 0 } : false}
-              activeDot={{ r: 4, fill: INCOME_HEX, stroke: "var(--card)", strokeWidth: 2 }}
+              fill="var(--income)"
+              radius={6}
+              maxBarSize={18}
               isAnimationActive
               animationDuration={500}
-              animationEasing="ease-out"
             />
-            <Area
-              type="monotone"
+            <Bar
               dataKey="saidas"
-              stroke={EXPENSE_HEX}
-              strokeWidth={2.5}
-              fill="url(#fillSaidas)"
-              dot={series.length <= 31 ? { r: 2.5, fill: EXPENSE_HEX, strokeWidth: 0 } : false}
-              activeDot={{ r: 4, fill: EXPENSE_HEX, stroke: "var(--card)", strokeWidth: 2 }}
+              radius={6}
+              maxBarSize={18}
               isAnimationActive
               animationDuration={500}
-              animationEasing="ease-out"
-            />
-            {peakSpendDay && (
-              <ReferenceDot
-                x={peakSpendDay.date}
-                y={peakSpendDay.valor}
-                r={5}
-                fill={EXPENSE_HEX}
-                stroke="var(--card)"
-                strokeWidth={2}
-              />
-            )}
+            >
+              {series.map((point) => (
+                <Cell
+                  key={point.date}
+                  fill={
+                    peakSpendDay && point.date === peakSpendDay.date
+                      ? "var(--chart-4)"
+                      : "var(--expense)"
+                  }
+                />
+              ))}
+            </Bar>
           </ComposedChart>
         </ResponsiveContainer>
       </CardContent>

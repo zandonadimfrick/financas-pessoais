@@ -38,15 +38,23 @@ export function ConfirmDeleteDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger render={trigger} />
-      <AlertDialogContent>
+      <AlertDialogContent className="gap-5 rounded-3xl p-5">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle className="text-lg">{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
+        <AlertDialogFooter className="mx-0 mb-0 rounded-none border-t-0 bg-transparent p-0">
+          <AlertDialogCancel
+            size="lg"
+            className="rounded-full px-4"
+            disabled={pending}
+          >
+            Cancelar
+          </AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
+            size="lg"
+            className="rounded-full px-4 font-semibold"
             disabled={pending}
             onClick={async () => {
               setPending(true);
