@@ -114,14 +114,33 @@ function DialogoLimites({
   const [valor, setValor] = React.useState("");
   const [salvando, setSalvando] = React.useState(false);
 
+  /*
+    As categorias são buscadas ao abrir. Precisa ser um efeito sobre `open`,
+    e não dentro do `onOpenChange`: quem abre este diálogo é um botão de fora,
+    então o `onOpenChange` não dispara na abertura e o seletor ficava vazio.
+  */
+  React.useEffect(() => {
+    if (!open) return;
+
+    let cancelado = false;
+    fetch("/api/categories?tipo=SAIDA")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((lista: Category[]) => {
+        if (!cancelado) setCategorias(lista);
+      })
+      .catch(() => {
+        if (!cancelado) setCategorias([]);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [open]);
+
   const abrir = (aberto: boolean) => {
     if (aberto) {
       setCategoryId("");
       setValor("");
-      fetch("/api/categories?tipo=SAIDA")
-        .then((r) => (r.ok ? r.json() : []))
-        .then(setCategorias)
-        .catch(() => setCategorias([]));
     }
     onOpenChange(aberto);
   };
