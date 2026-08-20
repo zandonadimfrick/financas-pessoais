@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEscopoStore, type Escopo } from "@/lib/store";
 import { MobileSidebarTrigger, navItems } from "@/components/layout/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LogoutButton } from "@/components/layout/logout-button";
 
 function useCurrentPageTitle() {
   const pathname = usePathname();
@@ -66,6 +67,8 @@ export function Topbar() {
         <div aria-hidden className="hidden h-6 w-px bg-border sm:block" />
 
         <ThemeToggle />
+
+        <LogoutButton />
 
         {/* Atalho pra registrar uma nova transação — o "+" circular da referência. */}
         <Link
