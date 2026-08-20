@@ -40,6 +40,100 @@ export interface Card {
   updatedAt: string;
 }
 
+export type StatusFatura = "ABERTA" | "FECHADA" | "PAGA";
+
+/** Uma fatura (ciclo) do cartão, como vem no `resumo` de `GET /api/cards?resumo=1`. */
+export interface ResumoFatura {
+  competencia: string;
+  inicio: string;
+  fechamento: string;
+  vencimento: string;
+  status: StatusFatura;
+  total: number;
+  quantidade: number;
+  pagoEm: string | null;
+  valorPago: number | null;
+}
+
+/** Uma parcela que ainda vai cair em fatura futura. */
+export interface ParcelaFutura {
+  competencia: string;
+  vencimento: string;
+  total: number;
+  quantidade: number;
+}
+
+/** Agregado de limite + faturas de um cartão. */
+export interface ResumoCartao {
+  limite: number;
+  /** Soma do que ainda não foi pago — o que está segurando o limite. */
+  utilizado: number;
+  disponivel: number;
+  /** 0 a 100, já limitado a 100 pela API. */
+  percentualUtilizado: number;
+  faturaAtual: ResumoFatura | null;
+  /** Faturas fechadas e não pagas, da mais antiga para a mais recente. */
+  faturasEmAberto: ResumoFatura[];
+  /**
+   * Parcelas agendadas para faturas futuras. Opcionais no cliente porque a
+   * tela precisa continuar funcionando se a API ainda não devolver o campo.
+   */
+  parcelasFuturas?: ParcelaFutura[];
+  totalFuturo?: number;
+}
+
+export interface CardComResumo extends Card {
+  resumo: ResumoCartao;
+}
+
+/**
+ * Lançamento como vem no extrato da fatura. A rota inclui só `category`
+ * (sem `account`/`card`/`recurringId`), por isso não reusa `Transaction`.
+ */
+export interface FaturaLancamento {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: TipoLancamento;
+  data: string;
+  escopo: Escopo;
+  observacao: string | null;
+  efetivado: boolean;
+  categoryId: string | null;
+  category: Category | null;
+  accountId: string | null;
+  cardId: string | null;
+  /** Número desta parcela (ex.: 3) — `null` quando a compra não é parcelada. */
+  parcela?: number | null;
+  /** Total de parcelas da compra (ex.: 10). */
+  parcelasTotal?: number | null;
+  /** Valor cheio da compra parcelada. */
+  valorTotal?: number | null;
+  /** Mesmo id em todas as parcelas da mesma compra. */
+  compraId?: string | null;
+}
+
+/** Resposta de `GET /api/cards/{id}/faturas/{competencia}`. */
+export interface ExtratoFatura {
+  cartao: { id: string; nome: string; cor: string };
+  competencia: string;
+  inicio: string;
+  fechamento: string;
+  vencimento: string;
+  status: StatusFatura;
+  total: number;
+  pagoEm: string | null;
+  valorPago: number | null;
+  lancamentos: FaturaLancamento[];
+}
+
+/** Resposta de POST/DELETE em `…/faturas/{competencia}/pagar`. */
+export interface PagamentoFaturaResponse {
+  paga: boolean;
+  valorPago?: number;
+  resumo: ResumoCartao | null;
+}
+
 export interface Category {
   id: string;
   nome: string;
@@ -66,6 +160,11 @@ export interface Transaction {
   cardId: string | null;
   card: Card | null;
   recurringId: string | null;
+  /** Parcelamento — nulos quando a compra é à vista. */
+  compraId: string | null;
+  parcela: number | null;
+  parcelasTotal: number | null;
+  valorTotal: number | null;
   createdAt: string;
   updatedAt: string;
 }

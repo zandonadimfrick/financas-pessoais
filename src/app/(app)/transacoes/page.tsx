@@ -17,6 +17,7 @@ import {
   Search,
   Sparkles,
   Trash2,
+  TriangleAlert,
   Wallet,
   X,
 } from "lucide-react";
@@ -24,7 +25,7 @@ import {
 import { categorySchema, transactionSchema } from "@/lib/validations";
 import type {
   Account,
-  Card as CardEntity,
+  CardComResumo,
   Category,
   Transaction,
   TipoLancamento,
@@ -82,6 +83,8 @@ interface FormValues {
   categoryId?: string | null;
   accountId?: string | null;
   cardId?: string | null;
+  /** Só usado ao criar: >1 divide a compra em parcelas mensais no cartão. */
+  parcelas?: number;
 }
 
 const NONE = "__none__";
@@ -110,6 +113,7 @@ function emptyValues(escopoDefault: string | null): FormValues {
     categoryId: null,
     accountId: null,
     cardId: null,
+    parcelas: 1,
   };
 }
 
@@ -229,7 +233,7 @@ function TransactionFormDialog({
   transaction: Transaction | null;
   categories: Category[];
   accounts: Account[];
-  cards: CardEntity[];
+  cards: CardComResumo[];
   escopoDefault: string | null;
   /** Valores vindos do lançamento em linguagem natural, para conferência. */
   prefill: Partial<FormValues> | null;
@@ -254,6 +258,18 @@ function TransactionFormDialog({
 
   const [newCategoryOpen, setNewCategoryOpen] = React.useState(false);
   const tipoSelecionado = watch("tipo");
+  const cardSelecionado = watch("cardId");
+  const parcelasSelecionadas = watch("parcelas") ?? 1;
+  const valorInformado = watch("valor") ?? 0;
+
+  // Numa compra parcelada o limite é tomado pelo valor CHEIO, não pela parcela.
+  const cartaoEscolhido = cards.find((c) => c.id === cardSelecionado);
+  const disponivelDoCartao = cartaoEscolhido?.resumo?.disponivel ?? 0;
+  const estouraLimite =
+    !!cartaoEscolhido &&
+    tipoSelecionado === "SAIDA" &&
+    valorInformado > 0 &&
+    valorInformado > disponivelDoCartao;
 
   React.useEffect(() => {
     if (!open) return;
@@ -286,11 +302,19 @@ function TransactionFormDialog({
     const url = isEdit ? `/api/transactions/${transaction!.id}` : "/api/transactions";
     const method = isEdit ? "PATCH" : "POST";
 
+    // Parcelamento só se aplica na criação de compra no cartão; fora disso o
+    // campo não vai pro servidor.
+    const { parcelas, ...resto } = values;
+    const corpo =
+      !isEdit && resto.cardId && parcelas && parcelas > 1
+        ? { ...resto, parcelas }
+        : resto;
+
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(corpo),
       });
 
       if (!res.ok) {
@@ -311,8 +335,21 @@ function TransactionFormDialog({
         return;
       }
 
-      const saved = (await res.json()) as Transaction;
-      toast.success(isEdit ? "Transação atualizada." : "Transação criada.", {
+      // Compra parcelada devolve o array de parcelas; as demais, um objeto.
+      const resposta = (await res.json()) as Transaction | Transaction[];
+      const parcelasCriadas = Array.isArray(resposta) ? resposta : null;
+      const saved = parcelasCriadas ? parcelasCriadas[0] : (resposta as Transaction);
+
+      const mensagem = isEdit
+        ? "Transação atualizada."
+        : parcelasCriadas
+          ? `Compra em ${parcelasCriadas.length}× registrada.`
+          : "Transação criada.";
+
+      toast.success(mensagem, {
+        description: parcelasCriadas
+          ? `${formatCurrency(values.valor)} comprometidos no limite do cartão.`
+          : undefined,
         action: !isEdit
           ? {
               label: "Anexar documento",
@@ -520,6 +557,63 @@ function TransactionFormDialog({
                 />
               </div>
             </div>
+
+            {/*
+              Parcelamento só existe em compra no cartão, e só ao criar: editar
+              uma parcela solta reabriria a porta pra compra ficar inconsistente.
+            */}
+            {!isEdit && cardSelecionado && (
+              <div className="flex flex-col gap-1.5 rounded-2xl bg-secondary/60 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="parcelas" className="text-sm">
+                    Parcelas
+                  </Label>
+                  <Input
+                    id="parcelas"
+                    type="number"
+                    min={1}
+                    max={48}
+                    className="h-9 w-24 rounded-full px-3.5 text-center"
+                    {...register("parcelas", { valueAsNumber: true })}
+                  />
+                </div>
+                {parcelasSelecionadas > 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    {valorInformado > 0 ? (
+                      <>
+                        {parcelasSelecionadas}× de{" "}
+                        <span className="font-numeric font-semibold text-foreground">
+                          {formatCurrency(valorInformado / parcelasSelecionadas)}
+                        </span>{" "}
+                        — o valor acima é o total da compra, e os{" "}
+                        {formatCurrency(valorInformado)} comprometem o limite do
+                        cartão desde já.
+                      </>
+                    ) : (
+                      "Informe o valor total da compra — ele será dividido nas parcelas."
+                    )}
+                  </p>
+                )}
+                {errors.parcelas && (
+                  <p className="text-xs text-destructive">{errors.parcelas.message}</p>
+                )}
+              </div>
+            )}
+
+            {/*
+              Aviso, não trava: o usuário pediu explicitamente para poder
+              lançar acima do limite e apenas ser avisado.
+            */}
+            {!isEdit && estouraLimite && (
+              <p className="flex items-start gap-2 rounded-2xl bg-destructive/10 p-3 text-xs text-destructive">
+                <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden />
+                <span>
+                  Isso ultrapassa o limite disponível do cartão (
+                  {formatCurrency(disponivelDoCartao)}). O lançamento será
+                  registrado mesmo assim.
+                </span>
+              </p>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="observacao">Observação (opcional)</Label>
@@ -889,7 +983,9 @@ export default function TransacoesPage() {
   );
   const accountsQuery = escopo !== "ALL" ? `?escopo=${escopo}` : "";
   const { data: accounts } = useFetch<Account[]>(`/api/accounts${accountsQuery}`);
-  const { data: cards } = useFetch<CardEntity[]>(`/api/cards${accountsQuery}`);
+  const { data: cards } = useFetch<CardComResumo[]>(
+    `/api/cards?resumo=1${accountsQuery.replace("?", "&")}`
+  );
 
   /*
     Busca geral, aplicada no cliente sobre o resultado já filtrado pela API:

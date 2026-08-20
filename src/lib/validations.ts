@@ -84,6 +84,17 @@ export const transactionSchema = z.object({
   categoryId: z.string().nullable().optional(),
   accountId: z.string().nullable().optional(),
   cardId: z.string().nullable().optional(),
+  /*
+    Número de parcelas. Quando maior que 1, `valor` é o VALOR TOTAL da compra
+    e o servidor divide em N lançamentos mensais. Só faz sentido em compra no
+    cartão — a API recusa parcelar fora dele.
+  */
+  parcelas: z
+    .number()
+    .int("Informe um número inteiro de parcelas")
+    .min(1, "Mínimo de 1 parcela")
+    .max(48, "Máximo de 48 parcelas")
+    .optional(),
 });
 export const transactionUpdateSchema = transactionSchema.partial();
 

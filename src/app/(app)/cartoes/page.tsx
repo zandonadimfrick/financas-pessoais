@@ -8,11 +8,20 @@ import { Archive, CreditCard, Pencil, Plus, Trash2 } from "lucide-react";
 import type { z } from "zod";
 
 import { cardSchema } from "@/lib/validations";
-import type { Account, ArchiveOnDeleteResponse, Card as CardEntity } from "@/lib/types";
+import type {
+  Account,
+  ArchiveOnDeleteResponse,
+  Card as CardEntity,
+  CardComResumo,
+} from "@/lib/types";
 import { useEscopoStore } from "@/lib/store";
 import { useFetch } from "@/hooks/use-fetch";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { competenciaExtenso } from "@/components/cartoes/fatura-utils";
+import { CartaoResumo } from "@/components/cartoes/cartao-resumo";
+import { FaturaExtratoDialog } from "@/components/cartoes/fatura-extrato-dialog";
+import { ParcelasFuturasDialog } from "@/components/cartoes/parcelas-futuras-dialog";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -370,9 +379,18 @@ export default function CartoesPage() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<CardEntity | null>(null);
 
+  // Extrato aberto: guarda o cartão e a competência mostrada. `null` = fechado.
+  const [extrato, setExtrato] = React.useState<{
+    card: CardEntity;
+    competencia: string;
+  } | null>(null);
+  // Projeção de parcelas futuras do cartão aberto. `null` = fechada.
+  const [projecao, setProjecao] = React.useState<CardComResumo | null>(null);
+
   const query = escopo !== "ALL" ? `?escopo=${escopo}` : "";
-  const { data: cards, loading, error, refetch } = useFetch<CardEntity[]>(
-    `/api/cards${query}`
+  // `resumo=1` traz limite utilizado, fatura atual e faturas em aberto.
+  const { data: cards, loading, error, refetch } = useFetch<CardComResumo[]>(
+    `/api/cards?resumo=1${escopo !== "ALL" ? `&escopo=${escopo}` : ""}`
   );
   const { data: accounts } = useFetch<Account[]>(`/api/accounts${query}`);
 
@@ -393,6 +411,65 @@ export default function CartoesPage() {
       refetch();
     } catch {
       toast.error("Erro de rede ao excluir o cartão.");
+    }
+  };
+
+  /**
+   * Marca a fatura como paga. O backend devolve o resumo atualizado, mas a
+   * tela refaz o GET da lista: é uma requisição só e mantém todos os cartões
+   * consistentes (um pagamento pode mudar o que está "em aberto").
+   */
+  const pagarFatura = async (
+    card: CardEntity,
+    competencia: string,
+    valor: number
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(
+        `/api/cards/${card.id}/faturas/${competencia}/pagar`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        // 409 = fatura sem valor a pagar; a API manda a mensagem pronta.
+        toast.error(body?.error ?? "Não foi possível pagar a fatura.");
+        return false;
+      }
+      toast.success(
+        `Fatura de ${competenciaExtenso(competencia)} paga. ${formatCurrency(
+          valor
+        )} liberados no limite.`
+      );
+      refetch();
+      return true;
+    } catch {
+      toast.error("Erro de rede ao pagar a fatura.");
+      return false;
+    }
+  };
+
+  const desfazerPagamento = async (
+    card: CardEntity,
+    competencia: string
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch(
+        `/api/cards/${card.id}/faturas/${competencia}/pagar`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        toast.error(body?.error ?? "Não foi possível desfazer o pagamento.");
+        return false;
+      }
+      toast.success(
+        `Pagamento de ${competenciaExtenso(competencia)} desfeito.`
+      );
+      refetch();
+      return true;
+    } catch {
+      toast.error("Erro de rede ao desfazer o pagamento.");
+      return false;
     }
   };
 
@@ -472,7 +549,10 @@ export default function CartoesPage() {
           {visible.map((card) => (
             <Card
               key={card.id}
-              className={cn("gap-4 px-5 py-5", card.arquivado && "opacity-60")}
+              className={cn(
+                "h-full gap-4 px-5 py-5",
+                card.arquivado && "opacity-60"
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-3">
@@ -522,23 +602,6 @@ export default function CartoesPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-muted-foreground">Limite</p>
-                <p className="font-numeric text-2xl font-semibold">
-                  {formatCurrency(card.limite)}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-2xl bg-secondary px-3.5 py-2 text-xs text-muted-foreground">
-                <span>
-                  Fecha dia <span className="font-medium text-foreground">{card.diaFechamento}</span>
-                </span>
-                <span aria-hidden className="size-1 rounded-full bg-muted-foreground/50" />
-                <span>
-                  Vence dia <span className="font-medium text-foreground">{card.diaVencimento}</span>
-                </span>
-              </div>
-
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant="secondary" className="gap-1.5">
                   <span
@@ -554,7 +617,30 @@ export default function CartoesPage() {
                     Arquivado
                   </Badge>
                 )}
+                <span className="text-xs text-muted-foreground">
+                  Fecha dia {card.diaFechamento} · vence dia {card.diaVencimento}
+                </span>
               </div>
+
+              {card.resumo ? (
+                <CartaoResumo
+                  card={card}
+                  onVerCompras={(competencia) =>
+                    setExtrato({ card, competencia })
+                  }
+                  onVerParcelasFuturas={() => setProjecao(card)}
+                  onPagar={(competencia, valor) =>
+                    pagarFatura(card, competencia, valor)
+                  }
+                />
+              ) : (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-muted-foreground">Limite</p>
+                  <p className="font-numeric text-2xl font-semibold">
+                    {formatCurrency(card.limite)}
+                  </p>
+                </div>
+              )}
             </Card>
           ))}
         </div>
@@ -568,6 +654,37 @@ export default function CartoesPage() {
         escopoDefault={escopo !== "ALL" ? escopo : null}
         onSaved={refetch}
       />
+
+      {extrato && (
+        <FaturaExtratoDialog
+          key={extrato.card.id}
+          card={extrato.card}
+          competenciaInicial={extrato.competencia}
+          onOpenChange={(open) => {
+            if (!open) setExtrato(null);
+          }}
+          onPagar={(competencia, valor) =>
+            pagarFatura(extrato.card, competencia, valor)
+          }
+          onDesfazer={(competencia) =>
+            desfazerPagamento(extrato.card, competencia)
+          }
+        />
+      )}
+
+      {projecao && (
+        <ParcelasFuturasDialog
+          key={projecao.id}
+          card={projecao}
+          onOpenChange={(open) => {
+            if (!open) setProjecao(null);
+          }}
+          onVerCompras={(competencia) => {
+            setProjecao(null);
+            setExtrato({ card: projecao, competencia });
+          }}
+        />
+      )}
     </div>
   );
 }

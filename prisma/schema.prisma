@@ -41,6 +41,12 @@ enum StatusRecebivel {
   CANCELADO
 }
 
+enum StatusFatura {
+  ABERTA
+  FECHADA
+  PAGA
+}
+
 enum TipoDocumento {
   NOTA_FISCAL
   COMPROVANTE
@@ -80,6 +86,36 @@ model Card {
   updatedAt       DateTime      @updatedAt
 
   transactions    Transaction[]
+  invoices        CardInvoice[]
+}
+
+/**
+ * Fatura de um ciclo do cartão.
+ *
+ * As compras NÃO guardam o id da fatura: a que pertencem é derivada da data
+ * da compra e do dia de fechamento do cartão. Assim, mudar o fechamento
+ * reorganiza os ciclos sem precisar corrigir lançamento por lançamento.
+ * Esta tabela guarda só o que não dá pra derivar: se a fatura foi paga.
+ */
+model CardInvoice {
+  id            String       @id @default(cuid())
+  cardId        String
+  card          Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  /** Mês de referência do fechamento, no formato "AAAA-MM". */
+  competencia   String
+  fechamento    DateTime
+  vencimento    DateTime
+
+  status        StatusFatura @default(ABERTA)
+  pagoEm        DateTime?
+  valorPago     Float?
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([cardId, competencia])
+  @@index([cardId])
 }
 
 model Category {
@@ -117,6 +153,21 @@ model Transaction {
   recurringId   String?
   recurring     Recurring?      @relation(fields: [recurringId], references: [id])
 
+  /*
+    Parcelamento. Uma compra em N vezes vira N lançamentos — um por ciclo de
+    fatura, cada um com o valor da parcela. Assim cada fatura mostra só o que
+    é devido nela, enquanto a soma das parcelas ainda não pagas segura o
+    limite do cartão por inteiro, como num banco de verdade.
+
+    `compraId` é o mesmo em todas as parcelas de uma compra, e permite
+    editá-las ou excluí-las como um bloco.
+  */
+  compraId      String?
+  parcela       Int?
+  parcelasTotal Int?
+  /** Valor cheio da compra parcelada — guardado para não recalcular por soma. */
+  valorTotal    Float?
+
   documents     Document[]
 
   createdAt     DateTime        @default(now())
@@ -125,6 +176,7 @@ model Transaction {
   @@index([data])
   @@index([tipo])
   @@index([escopo])
+  @@index([compraId])
 }
 
 model Recurring {
@@ -159,6 +211,19 @@ model Receivable {
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+}
+
+/**
+ * Teto de gastos mensal, um por escopo (PF e PJ têm orçamentos separados).
+ * Serve de referência para o indicador na barra lateral — é um alerta, não
+ * uma trava: o sistema nunca impede um lançamento por causa dele.
+ */
+model SpendingLimit {
+  id        String   @id @default(cuid())
+  escopo    Escopo   @unique
+  valor     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Document {

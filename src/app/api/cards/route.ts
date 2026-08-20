@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cardSchema } from "@/lib/validations";
+import { resumoDoCartao } from "@/lib/cartoes";
 import type { Prisma } from "@/generated/prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const escopo = searchParams.get("escopo");
+    // `resumo=1` agrega limite e faturas — mais caro, então só quando pedido.
+    const comResumo = searchParams.get("resumo") === "1";
 
     const where: Prisma.CardWhereInput = {};
     if (escopo === "PF" || escopo === "PJ") where.escopo = escopo;
@@ -16,7 +19,16 @@ export async function GET(req: NextRequest) {
       orderBy: { nome: "asc" },
     });
 
-    return NextResponse.json(cards);
+    if (!comResumo) return NextResponse.json(cards);
+
+    const comDados = await Promise.all(
+      cards.map(async (card) => ({
+        ...card,
+        resumo: await resumoDoCartao(card),
+      }))
+    );
+
+    return NextResponse.json(comDados);
   } catch {
     return NextResponse.json({ error: "Erro interno ao listar cartões" }, { status: 500 });
   }

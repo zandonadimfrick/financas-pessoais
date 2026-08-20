@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { LimiteGastos } from "@/components/layout/limite-gastos";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -126,6 +127,7 @@ export function Sidebar() {
       <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
         <NavList pathname={pathname} layoutIdPrefix="desktop" />
       </div>
+      <LimiteGastos />
     </aside>
   );
 }
@@ -155,17 +157,18 @@ export function MobileSidebarTrigger() {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="w-[min(84vw,18rem)] border-r border-sidebar-border bg-sidebar px-4 pt-6"
+        className="flex w-[min(84vw,18rem)] flex-col border-r border-sidebar-border bg-sidebar px-4 pt-6 pb-6"
       >
         <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
         <Logo />
-        <div className="mt-7">
+        <div className="mt-7 min-h-0 flex-1 overflow-y-auto">
           <NavList
             pathname={pathname}
             layoutIdPrefix="mobile"
             onNavigate={() => setOpen(false)}
           />
         </div>
+        <LimiteGastos className="mt-4" />
       </SheetContent>
     </Sheet>
   );

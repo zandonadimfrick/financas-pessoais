@@ -45,12 +45,31 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
     const existing = await prisma.transaction.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ error: "Transação não encontrada" }, { status: 404 });
+    }
+
+    /*
+      Numa compra parcelada, apagar uma parcela sozinha deixaria a compra
+      inconsistente (e o limite do cartão errado). Por isso `?compra=1` apaga
+      todas as parcelas de uma vez — quem chama decide, e a interface pergunta.
+    */
+    const apagarCompraToda =
+      new URL(req.url).searchParams.get("compra") === "1" && !!existing.compraId;
+
+    if (apagarCompraToda) {
+      const { count } = await prisma.transaction.deleteMany({
+        where: { compraId: existing.compraId },
+      });
+      return NextResponse.json({
+        deleted: true,
+        parcelasExcluidas: count,
+        message: `Compra parcelada excluída (${count} parcelas).`,
+      });
     }
 
     await prisma.transaction.delete({ where: { id } });
