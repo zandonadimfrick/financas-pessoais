@@ -1,0 +1,179 @@
+// Schema do sistema de finanças pessoais
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Escopo {
+  PF
+  PJ
+}
+
+enum TipoConta {
+  CORRENTE
+  POUPANCA
+  INVESTIMENTO
+  CARTEIRA
+}
+
+enum TipoLancamento {
+  ENTRADA
+  SAIDA
+}
+
+enum Periodicidade {
+  DIARIA
+  SEMANAL
+  MENSAL
+  ANUAL
+}
+
+enum StatusRecebivel {
+  PENDENTE
+  RECEBIDO
+  ATRASADO
+  CANCELADO
+}
+
+enum TipoDocumento {
+  NOTA_FISCAL
+  COMPROVANTE
+  OUTRO
+}
+
+model Account {
+  id            String        @id @default(cuid())
+  nome          String
+  instituicao   String
+  tipo          TipoConta     @default(CORRENTE)
+  escopo        Escopo        @default(PF)
+  saldoInicial  Float         @default(0)
+  cor           String        @default("#6366f1")
+  icone         String?
+  arquivada     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  transactions  Transaction[]
+  cards         Card[]
+}
+
+model Card {
+  id              String        @id @default(cuid())
+  nome            String
+  instituicao     String
+  escopo          Escopo        @default(PF)
+  limite          Float         @default(0)
+  diaFechamento   Int           @default(1)
+  diaVencimento   Int           @default(10)
+  cor             String        @default("#a855f7")
+  arquivado       Boolean       @default(false)
+  accountId       String?
+  account         Account?      @relation(fields: [accountId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  transactions    Transaction[]
+}
+
+model Category {
+  id            String        @id @default(cuid())
+  nome          String        @unique
+  tipo          TipoLancamento
+  essencial     Boolean       @default(false)
+  cor           String        @default("#22d3ee")
+  icone         String?
+  createdAt     DateTime      @default(now())
+
+  transactions  Transaction[]
+  recurrings    Recurring[]
+}
+
+model Transaction {
+  id            String          @id @default(cuid())
+  descricao     String
+  valor         Float
+  tipo          TipoLancamento
+  data          DateTime
+  escopo        Escopo          @default(PF)
+  observacao    String?
+  efetivado     Boolean         @default(true)
+
+  categoryId    String?
+  category      Category?       @relation(fields: [categoryId], references: [id])
+
+  accountId     String?
+  account       Account?        @relation(fields: [accountId], references: [id])
+
+  cardId        String?
+  card          Card?           @relation(fields: [cardId], references: [id])
+
+  recurringId   String?
+  recurring     Recurring?      @relation(fields: [recurringId], references: [id])
+
+  documents     Document[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([data])
+  @@index([tipo])
+  @@index([escopo])
+}
+
+model Recurring {
+  id              String          @id @default(cuid())
+  nome            String
+  valor           Float
+  tipo            TipoLancamento  @default(SAIDA)
+  periodicidade   Periodicidade   @default(MENSAL)
+  diaCobranca     Int             @default(1)
+  escopo          Escopo          @default(PF)
+  ativo           Boolean         @default(true)
+  proximaCobranca DateTime?
+
+  categoryId      String?
+  category        Category?       @relation(fields: [categoryId], references: [id])
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  transactions    Transaction[]
+}
+
+model Receivable {
+  id            String          @id @default(cuid())
+  descricao     String
+  valor         Float
+  vencimento    DateTime
+  status        StatusRecebivel @default(PENDENTE)
+  escopo        Escopo          @default(PF)
+  pagador       String?
+  observacao    String?
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Document {
+  id            String        @id @default(cuid())
+  tipo          TipoDocumento @default(COMPROVANTE)
+  nomeArquivo   String
+  caminho       String
+  mimeType      String
+  tamanho       Int
+  escopo        Escopo        @default(PF)
+  competencia   String
+  observacao    String?
+
+  transactionId String?
+  transaction   Transaction?  @relation(fields: [transactionId], references: [id])
+
+  createdAt     DateTime      @default(now())
+}
