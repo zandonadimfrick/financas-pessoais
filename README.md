@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Finanças — Painel Pessoal
 
-## Getting Started
+Sistema de finanças pessoais para acompanhar entradas, saídas, contas, cartões,
+recebíveis, assinaturas e os documentos fiscais do mês (notas e comprovantes).
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript + Tailwind CSS v4
+- **Prisma 7** com Postgres no **Supabase** (via driver adapter `pg`)
+- **shadcn/ui** (Base UI), **Recharts** e **Framer Motion**
+
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Crie um `.env` na raiz com:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# Supabase → Connect → ORM → Prisma
+DATABASE_URL="postgresql://…pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://…pooler.supabase.com:5432/postgres"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Senha única de acesso ao painel
+APP_PASSWORD="sua-senha"
+# Segredo que assina o cookie de sessão: openssl rand -hex 32
+AUTH_SECRET="…"
+```
 
-## Learn More
+## Banco de dados
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx prisma migrate dev     # aplica as migrations
+npx tsx prisma/seed.ts     # bancos e categorias iniciais
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para ver as telas com dados realistas antes de lançar de verdade:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx tsx prisma/seed-demo.ts            # gera 12 meses de lançamentos fictícios
+npx tsx prisma/seed-demo.ts --limpar   # remove todos eles
+```
 
-## Deploy on Vercel
+## Acesso
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Todas as rotas são protegidas por `src/proxy.ts`: sem sessão, as páginas
+redirecionam para `/login` e a API responde `401`. A sessão fica num cookie
+`httpOnly` assinado com HMAC-SHA256, válido por 30 dias.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Funcionalidades
+
+- **Painel** em mosaico: saldo, entradas e saídas do período, comprometimento
+  da renda, gráfico diário, mapa de gastos (dia/mês/ano) e maiores categorias
+- **Transações** com filtro por período, busca geral e **lançamento por frase**
+  — escreva "gastei 25 na padaria hoje no cartão Nubank" e o formulário abre
+  preenchido para conferência
+- **Transferência entre contas**, que gera os dois lançamentos vinculados sem
+  contar como ganho ou gasto nos relatórios
+- **Documentos**: upload de notas fiscais e comprovantes por competência
+- Tema claro e escuro, e layout pensado tanto para 1920×1080 quanto para o
+  celular (com navegação inferior)
