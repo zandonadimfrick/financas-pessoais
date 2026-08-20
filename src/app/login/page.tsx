@@ -102,7 +102,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background p-4">
+    <div className="bg-textura flex min-h-svh items-center justify-center bg-background p-4">
       <React.Suspense
         fallback={<Card className="h-80 w-full max-w-sm rounded-3xl" />}
       >

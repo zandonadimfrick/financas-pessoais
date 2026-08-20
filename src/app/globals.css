@@ -120,6 +120,9 @@
   --accent-indigo: #f97316;
   --accent-violet: #e8593f;
   --accent-cyan: #c2410c;
+
+  /* Riscos diagonais da textura de fundo — quase invisíveis de propósito. */
+  --textura-linha: rgb(0 0 0 / 2.2%);
 }
 
 .dark {
@@ -170,6 +173,8 @@
   --accent-indigo: #fdba74;
   --accent-violet: #ff7a5c;
   --accent-cyan: #f2542d;
+
+  --textura-linha: rgb(255 255 255 / 3.5%);
 }
 
 @layer base {
@@ -193,6 +198,57 @@
 }
 
 @layer utilities {
+  /*
+    Textura de fundo: uma grade discreta de cruzinhas com duas diagonais bem
+    apagadas por cima. É decoração pura — fica em opacidade baixíssima para
+    dar profundidade sem competir com os números, que são o que importa aqui.
+
+    Feita só com CSS (SVG embutido + gradientes), sem arquivo de imagem, para
+    não custar requisição nem peso.
+  */
+  .bg-textura {
+    background-image:
+      /* Diagonais de bordas macias: leem como um brilho de luz atravessando o
+         fundo, não como riscos. Bordas duras chamavam atenção demais. */
+      linear-gradient(
+        104deg,
+        transparent 30%,
+        var(--textura-linha) 38%,
+        transparent 46%
+      ),
+      linear-gradient(
+        122deg,
+        transparent 56%,
+        var(--textura-linha) 63%,
+        transparent 70%
+      ),
+      /* Grade de cruzinhas */
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 17v6M17 20h6' stroke='%23000' stroke-width='1' stroke-opacity='0.045' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+    background-size:
+      100% 100%,
+      100% 100%,
+      40px 40px;
+    background-repeat: no-repeat, no-repeat, repeat;
+  }
+
+  /* No escuro as cruzinhas precisam ser claras, senão somem no fundo. */
+  .dark .bg-textura {
+    background-image:
+      linear-gradient(
+        104deg,
+        transparent 38%,
+        var(--textura-linha) 38.15%,
+        transparent 38.3%
+      ),
+      linear-gradient(
+        122deg,
+        transparent 62%,
+        var(--textura-linha) 62.12%,
+        transparent 62.25%
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 17v6M17 20h6' stroke='%23fff' stroke-width='1' stroke-opacity='0.07' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");
+  }
+
   /*
     Painel "glass". O tema agora é chapado (superfícies opacas), então o blur
     virou um detalhe sutil — só aparece quando o elemento tem fundo

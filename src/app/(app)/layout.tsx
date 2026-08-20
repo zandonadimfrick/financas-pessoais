@@ -23,7 +23,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         o espaço disponível. Páginas podem impor seu próprio `max-w` interno
         se fizer sentido pra elas.
       */}
-      <div className="flex h-svh w-full flex-col md:p-3">
+      <div className="bg-textura flex h-svh w-full flex-col md:p-3">
         <div className="flex min-h-0 flex-1 overflow-hidden bg-card md:rounded-[2rem] md:ring-1 md:ring-foreground/8">
           <Sidebar />
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -32,7 +32,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
               A área de conteúdo é o container de rolagem do app. O `pb-28` no
               mobile reserva espaço pra barra de navegação inferior fixa.
             */}
-            <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6 xl:p-8 2xl:p-10">
+            <main className="bg-textura min-h-0 flex-1 overflow-y-auto p-4 pb-28 md:p-6 md:pb-6 xl:p-8 2xl:p-10">
               <PageTransition>{children}</PageTransition>
             </main>
           </div>
