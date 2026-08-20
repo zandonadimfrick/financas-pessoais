@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { PageTransition } from "@/components/layout/page-transition";
+import { GeradorRecorrentes } from "@/components/layout/gerador-recorrentes";
 
 /**
  * Shell do app autenticado. Fica num grupo de rotas para que `/login` — que
@@ -39,6 +40,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
       </div>
 
       <MobileNav />
+      <GeradorRecorrentes />
     </>
   );
 }

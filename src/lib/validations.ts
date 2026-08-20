@@ -59,6 +59,9 @@ export const recurringSchema = z.object({
   ativo: z.boolean().optional(),
   proximaCobranca: z.coerce.date().nullable().optional(),
   categoryId: z.string().nullable().optional(),
+  /** Onde a assinatura é cobrada — permite somá-la no limite do cartão. */
+  cardId: z.string().nullable().optional(),
+  accountId: z.string().nullable().optional(),
 });
 export const recurringUpdateSchema = recurringSchema.partial();
 

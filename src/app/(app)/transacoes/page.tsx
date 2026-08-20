@@ -14,6 +14,7 @@ import {
   FileText,
   Pencil,
   Plus,
+  Repeat,
   Search,
   Sparkles,
   Trash2,
@@ -85,6 +86,8 @@ interface FormValues {
   cardId?: string | null;
   /** Só usado ao criar: >1 divide a compra em parcelas mensais no cartão. */
   parcelas?: number;
+  /** Só usado ao criar: marca como assinatura e passa a repetir todo mês. */
+  assinatura?: boolean;
 }
 
 const NONE = "__none__";
@@ -114,6 +117,7 @@ function emptyValues(escopoDefault: string | null): FormValues {
     accountId: null,
     cardId: null,
     parcelas: 1,
+    assinatura: false,
   };
 }
 
@@ -261,6 +265,8 @@ function TransactionFormDialog({
   const cardSelecionado = watch("cardId");
   const parcelasSelecionadas = watch("parcelas") ?? 1;
   const valorInformado = watch("valor") ?? 0;
+  const ehAssinatura = watch("assinatura") ?? false;
+  const dataInformada = watch("data");
 
   // Numa compra parcelada o limite é tomado pelo valor CHEIO, não pela parcela.
   const cartaoEscolhido = cards.find((c) => c.id === cardSelecionado);
@@ -302,11 +308,12 @@ function TransactionFormDialog({
     const url = isEdit ? `/api/transactions/${transaction!.id}` : "/api/transactions";
     const method = isEdit ? "PATCH" : "POST";
 
-    // Parcelamento só se aplica na criação de compra no cartão; fora disso o
-    // campo não vai pro servidor.
-    const { parcelas, ...resto } = values;
+    // Parcelamento e assinatura só existem na criação; nenhum dos dois é
+    // campo de transação, então não vão junto no corpo do PATCH/POST.
+    const { parcelas, assinatura, ...resto } = values;
+    const criarAssinatura = !isEdit && !!assinatura;
     const corpo =
-      !isEdit && resto.cardId && parcelas && parcelas > 1
+      !isEdit && resto.cardId && !criarAssinatura && parcelas && parcelas > 1
         ? { ...resto, parcelas }
         : resto;
 
@@ -340,16 +347,59 @@ function TransactionFormDialog({
       const parcelasCriadas = Array.isArray(resposta) ? resposta : null;
       const saved = parcelasCriadas ? parcelasCriadas[0] : (resposta as Transaction);
 
+      /*
+        A assinatura é criada DEPOIS da transação: este lançamento é a cobrança
+        deste mês, e o recorrente cuida das próximas. Se falhar, o lançamento
+        continua valendo — só o "repete todo mês" não é ativado, e o usuário é
+        avisado disso.
+      */
+      let assinaturaCriada = false;
+      if (criarAssinatura) {
+        const diaCobranca = Number(resto.data.slice(8, 10)) || 1;
+        try {
+          const resAssinatura = await fetch("/api/recurrings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              nome: resto.descricao,
+              valor: resto.valor,
+              tipo: resto.tipo,
+              periodicidade: "MENSAL",
+              diaCobranca,
+              escopo: resto.escopo,
+              ativo: true,
+              categoryId: resto.categoryId,
+              cardId: resto.cardId,
+              accountId: resto.accountId,
+            }),
+          });
+          assinaturaCriada = resAssinatura.ok;
+          if (!resAssinatura.ok) {
+            toast.error(
+              "Lançamento salvo, mas não consegui criar a assinatura recorrente."
+            );
+          }
+        } catch {
+          toast.error(
+            "Lançamento salvo, mas não consegui criar a assinatura recorrente."
+          );
+        }
+      }
+
       const mensagem = isEdit
         ? "Transação atualizada."
-        : parcelasCriadas
-          ? `Compra em ${parcelasCriadas.length}× registrada.`
-          : "Transação criada.";
+        : assinaturaCriada
+          ? "Assinatura criada."
+          : parcelasCriadas
+            ? `Compra em ${parcelasCriadas.length}× registrada.`
+            : "Transação criada.";
 
       toast.success(mensagem, {
-        description: parcelasCriadas
-          ? `${formatCurrency(values.valor)} comprometidos no limite do cartão.`
-          : undefined,
+        description: assinaturaCriada
+          ? `${formatCurrency(values.valor)} todo mês no dia ${resto.data.slice(8, 10)}.`
+          : parcelasCriadas
+            ? `${formatCurrency(values.valor)} comprometidos no limite do cartão.`
+            : undefined,
         action: !isEdit
           ? {
               label: "Anexar documento",
@@ -559,10 +609,48 @@ function TransactionFormDialog({
             </div>
 
             {/*
+              Assinatura: transforma o lançamento em cobrança recorrente mensal
+              no mesmo dia escolhido. Só ao criar — mexer nisso ao editar uma
+              cobrança já gerada bagunçaria o histórico.
+            */}
+            {!isEdit && tipoSelecionado === "SAIDA" && (
+              <div className="flex flex-col gap-2 rounded-2xl bg-secondary/60 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="assinatura" className="flex items-center gap-2 text-sm">
+                    <Repeat className="size-4 text-muted-foreground" aria-hidden />
+                    É uma assinatura
+                  </Label>
+                  <Controller
+                    control={control}
+                    name="assinatura"
+                    render={({ field }) => (
+                      <Switch
+                        id="assinatura"
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                </div>
+                {ehAssinatura && (
+                  <p className="text-xs text-muted-foreground">
+                    Repete todo mês no dia{" "}
+                    <span className="font-semibold text-foreground">
+                      {dataInformada ? dataInformada.slice(8, 10) : "—"}
+                    </span>
+                    {cardSelecionado
+                      ? " no cartão escolhido, e aparece no total de assinaturas dele."
+                      : ", e as próximas cobranças são lançadas sozinhas."}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/*
               Parcelamento só existe em compra no cartão, e só ao criar: editar
               uma parcela solta reabriria a porta pra compra ficar inconsistente.
             */}
-            {!isEdit && cardSelecionado && (
+            {!isEdit && cardSelecionado && !ehAssinatura && (
               <div className="flex flex-col gap-1.5 rounded-2xl bg-secondary/60 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="parcelas" className="text-sm">

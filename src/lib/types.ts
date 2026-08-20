@@ -80,6 +80,21 @@ export interface ResumoCartao {
    */
   parcelasFuturas?: ParcelaFutura[];
   totalFuturo?: number;
+  /** Assinaturas ativas cobradas neste cartão. */
+  assinaturas?: AssinaturaDoCartao[];
+  /** Quanto do limite some todo mês só com assinaturas. */
+  totalAssinaturasMensal?: number;
+}
+
+/** Assinatura recorrente cobrada num cartão. */
+export interface AssinaturaDoCartao {
+  id: string;
+  nome: string;
+  valor: number;
+  periodicidade: string;
+  diaCobranca: number;
+  valorMensal: number;
+  categoria: { nome: string; cor: string } | null;
 }
 
 export interface CardComResumo extends Card {

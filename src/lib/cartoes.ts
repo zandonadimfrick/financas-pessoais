@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { valorMensalEquivalente } from "@/lib/recorrentes";
 import {
   cicloAtual,
   cicloDaCompetencia,
@@ -41,6 +42,21 @@ export interface ResumoCartao {
   parcelasFuturas: ParcelaFutura[];
   /** Soma de `parcelasFuturas` — o quanto do limite está preso no futuro. */
   totalFuturo: number;
+  /** Assinaturas ativas cobradas neste cartão. */
+  assinaturas: AssinaturaDoCartao[];
+  /** Quanto do limite some todo mês só com assinaturas. */
+  totalAssinaturasMensal: number;
+}
+
+export interface AssinaturaDoCartao {
+  id: string;
+  nome: string;
+  valor: number;
+  periodicidade: string;
+  diaCobranca: number;
+  /** Valor convertido para equivalente mensal, para poder somar tudo. */
+  valorMensal: number;
+  categoria: { nome: string; cor: string } | null;
 }
 
 function iso(data: Date): string {
@@ -191,6 +207,31 @@ export async function resumoDoCartao(
       totalFuturo
   );
 
+  /*
+    Assinaturas cobradas neste cartão. Elas NÃO entram em `utilizado`: o que
+    já foi cobrado virou lançamento e a fatura correspondente já conta. Isto
+    aqui é informativo — mostra quanto do limite volta a sumir todo mês.
+  */
+  const recorrentes = await prisma.recurring.findMany({
+    where: { cardId: card.id, ativo: true },
+    include: { category: true },
+    orderBy: { valor: "desc" },
+  });
+
+  const assinaturas: AssinaturaDoCartao[] = recorrentes.map((r) => ({
+    id: r.id,
+    nome: r.nome,
+    valor: r.valor,
+    periodicidade: r.periodicidade,
+    diaCobranca: r.diaCobranca,
+    valorMensal: arredondar(valorMensalEquivalente(r.valor, r.periodicidade)),
+    categoria: r.category ? { nome: r.category.nome, cor: r.category.cor } : null,
+  }));
+
+  const totalAssinaturasMensal = arredondar(
+    assinaturas.reduce((s, a) => s + a.valorMensal, 0)
+  );
+
   const disponivel = arredondar(Math.max(card.limite - utilizado, 0));
   const percentualUtilizado =
     card.limite > 0
@@ -206,6 +247,8 @@ export async function resumoDoCartao(
     faturasEmAberto,
     parcelasFuturas,
     totalFuturo,
+    assinaturas,
+    totalAssinaturasMensal,
   };
 }
 

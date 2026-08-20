@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Receipt, Wallet } from "lucide-react";
+import { CalendarClock, Receipt, Repeat, Wallet } from "lucide-react";
 
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,8 @@ export function CartaoResumo({
 
   const parcelasFuturas = resumo.parcelasFuturas ?? [];
   const totalFuturo = resumo.totalFuturo ?? 0;
+  const assinaturas = resumo.assinaturas ?? [];
+  const totalAssinaturas = resumo.totalAssinaturasMensal ?? 0;
 
   const aPagar: ResumoFatura | null = faturaAPagar(resumo);
   const competenciaExtrato = atual?.competencia ?? aPagar?.competencia ?? null;
@@ -143,6 +145,58 @@ export function CartaoResumo({
               : `${parcelasFuturas.length} meses`}
           </span>
         </button>
+      )}
+
+      {/*
+        Assinaturas não entram no "utilizado" — o que já foi cobrado virou
+        lançamento e a fatura conta. Isto responde outra pergunta: quanto do
+        limite volta a sumir todo mês só com mensalidades.
+      */}
+      {totalAssinaturas > 0 && (
+        <div className="flex flex-col gap-1.5 rounded-2xl bg-secondary/60 px-3.5 py-2.5">
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Repeat aria-hidden className="size-3.5 shrink-0" />
+              <span className="font-numeric font-medium text-foreground">
+                {formatCurrency(totalAssinaturas)}
+              </span>
+              por mês em assinaturas
+            </span>
+            <span className="shrink-0 font-medium">
+              {assinaturas.length === 1 ? "1 ativa" : `${assinaturas.length} ativas`}
+            </span>
+          </div>
+
+          <ul className="flex flex-col gap-1">
+            {assinaturas.slice(0, 3).map((assinatura) => (
+              <li
+                key={assinatura.id}
+                className="flex items-center justify-between gap-2 text-[0.7rem]"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="size-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: assinatura.categoria?.cor ?? "#94a3b8" }}
+                  />
+                  <span className="truncate text-foreground/90">{assinatura.nome}</span>
+                  <span className="shrink-0 text-muted-foreground">
+                    dia {assinatura.diaCobranca}
+                  </span>
+                </span>
+                <span className="font-numeric shrink-0 text-muted-foreground">
+                  {formatCurrency(assinatura.valor)}
+                </span>
+              </li>
+            ))}
+            {assinaturas.length > 3 && (
+              <li className="text-[0.7rem] text-muted-foreground">
+                +{assinaturas.length - 3}{" "}
+                {assinaturas.length - 3 === 1 ? "assinatura" : "assinaturas"}
+              </li>
+            )}
+          </ul>
+        </div>
       )}
 
       <div className="mt-auto flex items-center gap-2">

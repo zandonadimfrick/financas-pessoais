@@ -68,6 +68,7 @@ model Account {
 
   transactions  Transaction[]
   cards         Card[]
+  recurrings    Recurring[]
 }
 
 model Card {
@@ -87,6 +88,7 @@ model Card {
 
   transactions    Transaction[]
   invoices        CardInvoice[]
+  recurrings      Recurring[]
 }
 
 /**
@@ -129,6 +131,7 @@ model Category {
 
   transactions  Transaction[]
   recurrings    Recurring[]
+  spendingLimit SpendingLimit?
 }
 
 model Transaction {
@@ -193,6 +196,17 @@ model Recurring {
   categoryId      String?
   category        Category?       @relation(fields: [categoryId], references: [id])
 
+  /*
+    Onde a assinatura é cobrada. Saber que ela cai no cartão é o que permite
+    mostrar, na tela de cartões, quanto do limite some todo mês só com
+    mensalidades — que é a pergunta que o extrato sozinho não responde.
+  */
+  cardId          String?
+  card            Card?           @relation(fields: [cardId], references: [id])
+
+  accountId       String?
+  account         Account?        @relation(fields: [accountId], references: [id])
+
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -214,16 +228,17 @@ model Receivable {
 }
 
 /**
- * Teto de gastos mensal, um por escopo (PF e PJ têm orçamentos separados).
- * Serve de referência para o indicador na barra lateral — é um alerta, não
- * uma trava: o sistema nunca impede um lançamento por causa dele.
+ * Teto de gastos mensal POR CATEGORIA ("no máximo R$ 250 de Uber no mês").
+ * Serve de alerta na barra lateral — é referência, não trava: o sistema nunca
+ * impede um lançamento por causa dele.
  */
 model SpendingLimit {
-  id        String   @id @default(cuid())
-  escopo    Escopo   @unique
-  valor     Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  categoryId String   @unique
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  valor      Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Document {
